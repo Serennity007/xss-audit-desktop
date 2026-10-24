@@ -1,0 +1,13 @@
+# Generated audit reports may contain sensitive project information
+xss-audit-report*.md
+
+# Local logs
+*.log
+
+# Editor settings
+.idea/
+.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
