@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+from . import __version__
 
 MAX_DOWNLOAD = 60 * 1024 * 1024
 MAX_EXTRACT = 250 * 1024 * 1024
@@ -125,7 +126,7 @@ def import_github(repository: str, ref: str = "", destination: str | Path | None
     url = f"https://api.github.com/repos/{owner}/{repo}/zipball"
     if ref:
         url += "/" + quote(ref, safe="")
-    request = Request(url, headers={"User-Agent": "XSS-Audit-Desktop/0.2.0", "Accept": "application/vnd.github+json"})
+    request = Request(url, headers={"User-Agent": f"XSS-Audit-Desktop/{__version__}", "Accept": "application/vnd.github+json"})
     send = transport or build_opener(GitHubRedirects()).open
     digest = hashlib.sha256()
     try:

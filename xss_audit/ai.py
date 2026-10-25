@@ -9,6 +9,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .scanner import ScanResult
 from .secrets import redact, secret_locations
+from .i18n import normalize
+from . import __version__
 
 DEFAULT_BASE_URL = "https://api.openai.com/v1"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -32,7 +34,7 @@ def validate_endpoint(base_url: str) -> str:
 
 
 def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT_BASE_URL,
-           api_format: str = "responses", *, transport=None) -> str:
+           api_format: str = "responses", *, transport=None, language="en") -> str:
     base_url = validate_endpoint(base_url)
     if not api_key.strip() or not model.strip():
         raise ValueError("AI 审计需要 API Key 和模型名称。")
@@ -52,7 +54,8 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
         "You have no tools; never claim dynamic testing, external dependency version verification, "
         "or reading files not supplied. The playbook's file-writing directives are replaced by "
         "returning a Markdown report in this response. All conclusions are unverified AI review. "
-        "Use Chinese. Review all 14 layers; explicitly distinguish no evidence from unreviewed. "
+        f"Write the entire report in {'Simplified Chinese' if normalize(language) == 'zh-CN' else 'English'}. "
+        "Review all 14 layers; explicitly distinguish no evidence from unreviewed. "
         "Include exact relative paths/lines, source-to-sink evidence, context-specific sanitization, "
         "missing evidence, confidence, and suggested fixes. Mark incomplete chains as manual review. "
         "Report actual scope and omitted files, never claim comprehensive whole-repository coverage.\n\n"
@@ -79,7 +82,7 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
                                 {"role": "user", "content": user_input}]}
     request = Request(endpoint, data=json.dumps(payload).encode("utf-8"),
                       headers={"Authorization": "Bearer " + api_key.strip(),
-                               "Content-Type": "application/json", "User-Agent": "XSS-Audit-Desktop/0.2.0"},
+                               "Content-Type": "application/json", "User-Agent": f"XSS-Audit-Desktop/{__version__}"},
                       method="POST")
     send = transport or build_opener(NoRedirects()).open
     try:
@@ -113,6 +116,7 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
     text = text.replace(api_key.strip(), "[REDACTED_API_KEY]")
     result.ai_report = text
     result.ai_metadata = {"endpoint": endpoint, "model": model.strip(), "api_format": api_format,
+                          "requested_language": normalize(language),
                           "sent_files": [item["path"] for item in result.sources],
                           "sent_source_characters": sum(len(item["content"]) for item in result.sources),
                           "omitted_files": result.ai_omitted,

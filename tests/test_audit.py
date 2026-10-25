@@ -41,7 +41,8 @@ class AuditTests(unittest.TestCase):
         self.assertTrue(all(m.status == "待人工确认" for m in result.matches))
         html = next(m for m in result.matches if m.layer == 1)
         self.assertEqual((html.path, html.line, html.column), ("src/示例.tsx", 1, 4))
-        self.assertIn("零匹配不代表安全", markdown(result))
+        self.assertIn("零匹配不代表安全", markdown(result, "zh-CN"))
+        self.assertIn("no matches is not proof of safety", markdown(result, "en"))
 
     def test_exclusions_unread_and_oversize_are_recorded(self):
         self.source("node_modules/pkg/bad.js", "eval(x)")
@@ -65,7 +66,8 @@ class AuditTests(unittest.TestCase):
         with patch("xss_audit.scanner.MAX_MATCHES", 1):
             result = scan(self.root)
         self.assertTrue(result.truncated)
-        self.assertIn("不完整", markdown(result))
+        self.assertIn("不完整", markdown(result, "zh-CN"))
+        self.assertIn("incomplete", markdown(result, "en"))
 
     def test_symlink_is_not_followed(self):
         with tempfile.TemporaryDirectory() as other:
@@ -197,7 +199,7 @@ class AuditTests(unittest.TestCase):
         with patch.dict(os.environ, {"OPENAI_API_KEY": ""}):
             second = self.root / "ai.md"
             self.assertEqual(main([str(self.root), "--ai", "-o", str(second)]), 2)
-        self.assertIn("AI 辅助审计", second.read_text(encoding="utf-8"))
+        self.assertIn("AI review", second.read_text(encoding="utf-8"))
 
     def test_cli_incomplete_ast_and_priority_filter_are_explicit(self):
         broken = self.source("broken.py", "def broken(:")

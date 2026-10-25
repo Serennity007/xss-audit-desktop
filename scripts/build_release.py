@@ -45,12 +45,13 @@ def main():
     with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as archive:
         for path in assets:
             archive.write(path, path.name)
-        for name in ["README.md", "LICENSE", "NOTICE.md", "SKILL.md", "THIRD-PARTY-NOTICES.txt"]:
+        for name in ["README.md", "README.zh-CN.md", "LICENSE", "NOTICE.md", "SKILL.md", "THIRD-PARTY-NOTICES.txt", "docs/LANGUAGES.md", "docs/ANALYSIS.md", "docs/ANALYSIS.en.md"]:
             archive.write(ROOT / name, name)
         for path in (ROOT / "examples" / "demo-project").rglob("*"):
             if path.is_file():
                 archive.write(path, path.relative_to(ROOT).as_posix())
         archive.write(ROOT / "examples" / "demo-report.html", "examples/demo-report.html")
+        archive.write(ROOT / "examples" / "demo-report.zh-CN.html", "examples/demo-report.zh-CN.html")
     assets.append(bundle)
     checksums = [f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}" for path in assets]
     (output / "SHA256SUMS.txt").write_text("\n".join(checksums) + "\n", encoding="utf-8")

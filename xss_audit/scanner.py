@@ -14,6 +14,7 @@ from typing import Callable
 
 from .analysis import analyze
 from .secrets import redact, secret_locations
+from .i18n import normalize, tr
 
 LAYERS = {
     1: "DOM / HTML 注入", 2: "属性与事件处理器", 3: "URL 与导航",
@@ -83,6 +84,7 @@ class Match:
 @dataclass
 class ScanResult:
     root: str
+    language: str = "en"
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     files_scanned: int = 0
     bytes_scanned: int = 0
@@ -241,45 +243,51 @@ def fenced(text: str) -> str:
     return f"{fence}\n{text}\n{fence}"
 
 
-def markdown(result: ScanResult) -> str:
+def markdown(result: ScanResult, language=None) -> str:
+    from .reports import localized_metadata
+    language = normalize(language or result.language)
+    t = lambda text: tr(text, language)
     status = "已取消，结果不完整" if result.cancelled else "达到上限，结果不完整" if result.truncated else "扫描完成，部分 AST 未完成" if result.ast_incomplete else "扫描完成"
-    parts = ["# XSS Audit 报告", f"时间（UTC）：{result.created_at}", "扫描目录：", fenced(result.root),
-             f"状态：{status}。扫描 {result.files_scanned} 个文件，{len(result.matches)} 条待人工确认线索。",
-             "规则搜索与有限 AST 数据流分析不构成完整审计。优先级表示复核顺序，所有自动匹配均需人工确认；零匹配不代表安全。",
-             "## 规则类别覆盖", "| 类别 | 匹配数 |", "| --- | ---: |"]
+    summary = (f"Status: {t(status)}. {result.files_scanned} files scanned; {len(result.matches)} unverified review signals." if language == "en" else f"状态：{status}。扫描 {result.files_scanned} 个文件，{len(result.matches)} 条待人工确认线索。")
+    parts = [t("# XSS Audit 报告"), f"{t('时间（UTC）')}: {result.created_at}", t("扫描目录："), fenced(result.root), summary,
+             t("规则搜索与有限 AST 数据流分析不构成完整审计。优先级表示复核顺序，所有自动匹配均需人工确认；零匹配不代表安全。"),
+             t("## 规则类别覆盖"), t("| 类别 | 匹配数 |"), "| --- | ---: |"]
     for layer, name in LAYERS.items():
-        parts.append(f"| {layer}. {name} | {sum(m.layer == layer for m in result.matches)} |")
-    parts.append("\n## 待人工确认")
+        parts.append(f"| {layer}. {t(name)} | {sum(m.layer == layer for m in result.matches)} |")
+    parts.append(t("\n## 待人工确认"))
     for index, match in enumerate(result.matches, 1):
-        parts.extend([f"### {index}. 第 {match.layer} 类：{match.rule}",
-                      f"复核优先级：{match.priority}；状态：{match.status}；证据：{match.confidence}；{match.cwe}",
+        title = f"### {index}. {t(LAYERS[match.layer])}: {t(match.rule)}" if language == "en" else f"### {index}. 第 {match.layer} 类：{match.rule}"
+        parts.extend([title,
+                      f"{t('复核优先级')}: {t(match.priority)}; {t('状态')}: {t(match.status)}; {t('证据')}: {t(match.confidence)}; {match.cwe}",
                       fenced(f"{match.path}:{match.line}:{match.column}"), fenced(match.snippet),
-                      fenced("\n".join(match.evidence)) if match.evidence else "尚无完整数据流证据。",
-                      "建议：" + match.recommendation, "复核备注：" + (match.note or "无")])
+                      fenced("\n".join(t(step) for step in match.evidence)) if match.evidence else t("尚无完整数据流证据。"),
+                      t("建议") + ": " + t(match.recommendation), t("复核备注") + ": " + (match.note or t("无"))])
     if result.import_metadata:
-        parts.extend(["## 导入来源", fenced(json.dumps(result.import_metadata, ensure_ascii=False, indent=2))])
+        parts.extend([t("## 导入来源"), fenced(json.dumps(localized_metadata(result.import_metadata, language), ensure_ascii=False, indent=2))])
     if result.report_filters:
-        parts.extend(["## 报告筛选条件", fenced(json.dumps(result.report_filters, ensure_ascii=False, indent=2))])
+        parts.extend([t("## 报告筛选条件"), fenced(json.dumps(result.report_filters, ensure_ascii=False, indent=2))])
     if result.analysis_notes:
-        parts.extend(["## AST 未完成 / 解析说明", fenced(json.dumps(result.analysis_notes, ensure_ascii=False, indent=2))])
-    parts.extend(["## 排除与未读取", "默认排除目录：" + ", ".join(sorted(EXCLUDED_DIRS)),
-                  "仅处理支持的文本扩展名；单文件上限 1 MiB、最多 10000 个文件 / 100 MiB / 10000 条匹配。读取 UTF-8；不跟随链接。不会执行项目文件。"])
+        parts.extend([t("## AST 未完成 / 解析说明"), fenced(json.dumps(localized_metadata(result.analysis_notes, language), ensure_ascii=False, indent=2))])
+    parts.extend([t("## 排除与未读取"), t("默认排除目录：") + ", ".join(sorted(EXCLUDED_DIRS)),
+                  t("仅处理支持的文本扩展名；单文件上限 1 MiB、最多 10000 个文件 / 100 MiB / 10000 条匹配。读取 UTF-8；不跟随链接。不会执行项目文件。")])
     for item in result.skipped:
-        parts.append(fenced(f"{item['path']} — {item['reason']}"))
+        parts.append(fenced(f"{item['path']} — {t(item['reason'])}"))
     if result.ai_report or result.ai_metadata:
-        parts.extend(["## AI 辅助审计（未验证）", "请求与实际发送范围：", fenced(json.dumps(result.ai_metadata, ensure_ascii=False, indent=2)),
-                      "因上下文预算未发送：", fenced("\n".join(result.ai_omitted) or "无"), result.ai_report])
-    parts.extend(["## 来源", "衍生自 https://github.com/songjianyang/xss-audit ，保留 MIT 许可与原始 SKILL.md。"])
+        parts.extend([t("## AI 辅助审计（未验证）"), t("请求与实际发送范围："), fenced(json.dumps(localized_metadata(result.ai_metadata, language), ensure_ascii=False, indent=2)),
+                      t("因上下文预算未发送："), fenced("\n".join(result.ai_omitted) or t("无")), result.ai_report])
+    parts.extend([t("## 来源"), t("衍生自 https://github.com/songjianyang/xss-audit ，保留 MIT 许可与原始 SKILL.md。")])
     return "\n\n".join(parts) + "\n"
 
 
-def write_report(result: ScanResult, target: str | Path, fmt: str = "markdown", overwrite: bool = False) -> Path:
+def write_report(result: ScanResult, target: str | Path, fmt: str = "markdown", overwrite: bool = False, language=None) -> Path:
+    language = normalize(language or result.language)
     path = Path(target).expanduser().resolve()
     if fmt in {"html", "sarif"}:
         from .reports import html_report, sarif
-        text = html_report(result) if fmt == "html" else json.dumps(sarif(result), ensure_ascii=False, indent=2)
+        text = html_report(result, language) if fmt == "html" else json.dumps(sarif(result, language), ensure_ascii=False, indent=2)
     elif fmt in {"markdown", "json"}:
-        text = json.dumps(result.to_dict(), ensure_ascii=False, indent=2) if fmt == "json" else markdown(result)
+        from .reports import localized_dict
+        text = json.dumps(localized_dict(result, language), ensure_ascii=False, indent=2) if fmt == "json" else markdown(result, language)
     else:
         raise ValueError("不支持的报告格式。")
     with path.open("w" if overwrite else "x", encoding="utf-8", newline="\n") as stream:

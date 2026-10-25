@@ -10,13 +10,29 @@ from .ai import DEFAULT_BASE_URL, review
 from .scanner import scan, write_report
 from .importer import import_github
 from .state import StateStore
+from .i18n import LANGUAGES, normalize, tr
 
 
 def main(argv=None) -> int:
     if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stderr.reconfigure(encoding="utf-8")
-    parser = argparse.ArgumentParser(description="XSS 静态审计助手；匹配结果需人工确认。")
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--lang", choices=LANGUAGES, default=os.environ.get("XSS_AUDIT_LANG", "en"))
+    language = normalize(pre.parse_known_args(argv)[0].lang)
+    t = lambda text: tr(text, language)
+
+    class Parser(argparse.ArgumentParser):
+        def add_argument(self, *names, **kwargs):
+            if "help" in kwargs:
+                kwargs["help"] = t(kwargs["help"])
+            return super().add_argument(*names, **kwargs)
+
+        def error(self, message):
+            return super().error(t(message))
+
+    parser = Parser(description=t("XSS 静态审计助手；匹配结果需人工确认。"))
+    parser.add_argument("--lang", choices=LANGUAGES, default=language, help=t("界面和报告语言（默认英语）"))
     parser.add_argument("path", nargs="?", help="本地代码文件夹")
     parser.add_argument("--repo", help="下载并审计公开 GitHub 仓库，例如 owner/repository")
     parser.add_argument("--ref", default="", help="GitHub 分支、标签或 commit；默认使用仓库默认分支")
@@ -24,7 +40,7 @@ def main(argv=None) -> int:
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("-o", "--output", help="报告路径（默认带时间戳，不覆盖已有文件）")
     parser.add_argument("--format", choices=["markdown", "json", "html", "sarif"], default="markdown")
-    parser.add_argument("--min-priority", choices=["高", "中", "信息"], default="信息", help="报告与 fail-on-match 的最低复核优先级")
+    parser.add_argument("--min-priority", choices=["high", "medium", "info"], type=lambda value: {"高": "high", "中": "medium", "信息": "info"}.get(value, value), default="info", help="报告与 fail-on-match 的最低复核优先级")
     parser.add_argument("--ignore-reviewed", action="store_true", help="不导出已标记为误报 / 已修复的线索")
     parser.add_argument("--no-saved-review", action="store_true", help="不读取本机保存的复核状态")
     parser.add_argument("--ai", action="store_true", help="明确同意发送已纳入范围的源代码到 AI 接口；可能产生 API 费用")
@@ -33,6 +49,7 @@ def main(argv=None) -> int:
     parser.add_argument("--api-format", choices=["responses", "chat"], default="responses")
     parser.add_argument("--fail-on-match", action="store_true", help="有待确认线索时返回 1；默认完成时返回 0")
     args = parser.parse_args(argv)
+    args.min_priority = {"high": "高", "medium": "中", "info": "信息"}.get(args.min_priority, args.min_priority)
     if bool(args.path) == bool(args.repo):
         parser.error("请提供本地代码文件夹或 --repo，二者选择一项。")
     if (args.ref or args.destination) and not args.repo:
@@ -43,20 +60,21 @@ def main(argv=None) -> int:
         metadata = {}
         path = args.path
         if args.repo:
-            path, metadata = import_github(args.repo, args.ref, args.destination, progress=lambda text: print(text, file=sys.stderr))
+            path, metadata = import_github(args.repo, args.ref, args.destination, progress=lambda text: print(t(text), file=sys.stderr))
         result = scan(path, collect_source=args.ai)
+        result.language = language
         result.import_metadata = metadata
         if not args.no_saved_review:
             try:
                 StateStore().apply(result)
             except (OSError, ValueError) as error:
-                print(f"复核记录未加载：{error}", file=sys.stderr)
+                print(t(f"复核记录未加载：{error}"), file=sys.stderr)
                 result.analysis_notes.append({"path": "本机复核记录", "reason": str(error)})
         ai_error = None
         if args.ai:
-            print(f"AI 将发送 {len(result.sources)} 个完整文件；预算外 {len(result.ai_omitted)} 个。", file=sys.stderr)
+            print(t(f"AI 将发送 {len(result.sources)} 个完整文件；预算外 {len(result.ai_omitted)} 个。"), file=sys.stderr)
             try:
-                review(result, os.environ.get("OPENAI_API_KEY", ""), args.model, args.base_url, args.api_format)
+                review(result, os.environ.get("OPENAI_API_KEY", ""), args.model, args.base_url, args.api_format, language=language)
             except ValueError as error:
                 ai_error = str(error)
                 result.ai_metadata = {"error": ai_error}
@@ -65,20 +83,20 @@ def main(argv=None) -> int:
                                  "matches_before_filters": len(result.matches)}
         result.matches = [m for m in result.matches if order[m.priority] <= order[args.min_priority]
                           and not (args.ignore_reviewed and m.status in {"误报", "已修复"})]
-        target = write_report(result, output, args.format)
-        print(f"扫描 {result.files_scanned} 个文件，{len(result.matches)} 条待确认线索。报告：{target}")
+        target = write_report(result, output, args.format, language=language)
+        print(t(f"扫描 {result.files_scanned} 个文件，{len(result.matches)} 条待确认线索。报告：{target}"))
         if ai_error:
-            print(f"AI 失败，本地报告已保留：{ai_error}", file=sys.stderr)
+            print(t(f"AI 失败，本地报告已保留：{ai_error}"), file=sys.stderr)
             return 2
         if result.truncated or result.cancelled or result.ast_incomplete:
-            print("扫描不完整，请缩小范围。", file=sys.stderr)
+            print(t("扫描不完整，请缩小范围。"), file=sys.stderr)
             return 2
         return 1 if args.fail_on_match and result.matches else 0
     except (OSError, ValueError) as error:
-        print(f"错误：{error}", file=sys.stderr)
+        print(t(f"错误：{error}"), file=sys.stderr)
         return 2
     except KeyboardInterrupt:
-        print("扫描已中断。", file=sys.stderr)
+        print(t("扫描已中断。"), file=sys.stderr)
         return 130
 
 

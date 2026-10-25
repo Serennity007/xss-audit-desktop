@@ -16,10 +16,33 @@ from .ai import DEFAULT_BASE_URL, review, validate_endpoint
 from .scanner import LAYERS, scan, write_report
 from .importer import import_github
 from .state import STATUSES, StateStore
+from .i18n import canonical, normalize, tr
+
+
+class UiVar(tk.StringVar):
+    """Localized display with canonical Python values for filters and state."""
+    def __init__(self, master, language, value=""):
+        self.language = language
+        self.raw = value
+        self.display = ""
+        super().__init__(master=master, value=value)
+        self.set(value)
+
+    def set(self, value):
+        self.raw = str(value)
+        self.display = tr(self.raw, self.language())
+        super().set(self.display)
+
+    def get(self):
+        displayed = super().get()
+        return self.raw if displayed == self.display else canonical(displayed)
+
+    def retranslate(self):
+        self.set(self.get())
 
 
 class AuditApp:
-    def __init__(self, root: tk.Tk, state_dir=None):
+    def __init__(self, root: tk.Tk, state_dir=None, language=None):
         self.root = root
         self.result = None
         self.events = queue.Queue()
@@ -34,6 +57,8 @@ class AuditApp:
         except (OSError, ValueError) as error:
             preferences = {}
             preference_error = str(error)
+        self.language = normalize(language or preferences.get("language", "en"))
+        self.ui_vars = []
         root.title(f"XSS Audit Desktop · {__version__}")
         width = max(900, min(1120, root.winfo_screenwidth() - 60))
         height = max(680, min(820, root.winfo_screenheight() - 80))
@@ -51,6 +76,13 @@ class AuditApp:
         style.configure("Treeview.Heading", font=("Microsoft YaHei UI", 10, "bold"))
         header = tk.Frame(root, bg="#152640", padx=20, pady=12)
         header.pack(fill="x")
+        language_box = tk.Frame(header, bg="#152640")
+        language_box.pack(side="right", anchor="n")
+        tk.Label(language_box, text="Language / 语言", fg="white", bg="#152640").pack(anchor="e")
+        self.language_choice = tk.StringVar(value="简体中文" if self.language == "zh-CN" else "English")
+        self.language_combo = ttk.Combobox(language_box, textvariable=self.language_choice, values=["English", "简体中文"], state="readonly", width=13)
+        self.language_combo.pack(pady=5)
+        self.language_combo.bind("<<ComboboxSelected>>", lambda _: self.set_language(self.language_choice.get()))
         tk.Label(header, text="XSS AUDIT", fg="white", bg="#152640", font=("Segoe UI", 23, "bold")).pack(anchor="w")
         tk.Label(header, text="代码审计工作台  /  AST 数据流线索  /  GitHub 导入  /  AI 复核", fg="#bbd0f1", bg="#152640", font=("Microsoft YaHei UI", 11)).pack(anchor="w", pady=(4, 0))
         body = ttk.Frame(root, padding=14)
@@ -72,10 +104,10 @@ class AuditApp:
         metrics.pack(fill="x", pady=(12, 0))
         self.metrics = []
         for title in ("扫描文件", "全部线索", "高优先复核", "已复核"):
-            variable = tk.StringVar(value=title + "  0")
+            variable = self.ui_var(title + "  0")
             self.metrics.append(variable)
             ttk.Label(metrics, textvariable=variable, foreground="#245bd8", font=("Microsoft YaHei UI", 12, "bold")).pack(side="left", padx=(0, 35))
-        self.status = tk.StringVar(value=preference_error or "选择本地目录或导入公开 GitHub 仓库。扫描不执行项目文件。")
+        self.status = self.ui_var(preference_error or "选择本地目录或导入公开 GitHub 仓库。扫描不执行项目文件。")
         ttk.Label(body, textvariable=self.status, wraplength=1040).pack(fill="x", pady=(12, 6))
         self.progress = ttk.Progressbar(body, mode="indeterminate")
         self.progress.pack(fill="x", pady=(0, 12))
@@ -93,12 +125,12 @@ class AuditApp:
         self.set_text(self.scope_text, "扫描后显示语言统计、导入来源、类别覆盖、跳过项和 AST 解析说明。")
         toolbar = ttk.Frame(local)
         toolbar.pack(fill="x", pady=(0, 8))
-        self.category = tk.StringVar(value="全部类别")
+        self.category = self.ui_var("全部类别")
         categories = ["全部类别"] + [f"{n}. {name}" for n, name in LAYERS.items()]
         combo = ttk.Combobox(toolbar, textvariable=self.category, values=categories, state="readonly", width=22)
         combo.pack(side="left")
         combo.bind("<<ComboboxSelected>>", lambda _: self.refresh())
-        self.priority = tk.StringVar(value="全部优先级")
+        self.priority = self.ui_var("全部优先级")
         priority = ttk.Combobox(toolbar, textvariable=self.priority, values=["全部优先级", "高", "中", "信息"], state="readonly", width=11)
         priority.pack(side="left", padx=8)
         priority.bind("<<ComboboxSelected>>", lambda _: self.refresh())
@@ -127,7 +159,7 @@ class AuditApp:
         self.detail.pack(fill="x")
         review_row = ttk.Frame(local)
         review_row.pack(fill="x", pady=(8, 0))
-        self.review_status = tk.StringVar(value=STATUSES[0])
+        self.review_status = self.ui_var(STATUSES[0])
         ttk.Combobox(review_row, textvariable=self.review_status, values=STATUSES, state="readonly", width=12).pack(side="left")
         self.review_note = tk.StringVar()
         ttk.Label(review_row, text="备注").pack(side="left", padx=(8, 0))
@@ -161,17 +193,78 @@ class AuditApp:
         self.ai_text.pack(fill="both", expand=True)
         self.set_text(self.ai_text, "尚未运行 AI 审计。可配置支持 Responses 或 Chat Completions 的接口。")
         root.protocol("WM_DELETE_WINDOW", self.close)
+        self.localize(root)
         root.after(100, self.poll)
 
-    @staticmethod
-    def set_text(widget, text):
+    def tr(self, text):
+        return tr(text, self.language)
+
+    def ui_var(self, value):
+        variable = UiVar(self.root, lambda: self.language, value)
+        self.ui_vars.append(variable)
+        return variable
+
+    def localize(self, widget):
+        if "text" in widget.keys() and not ("textvariable" in widget.keys() and widget.cget("textvariable")):
+            if not hasattr(widget, "_original_text"):
+                widget._original_text = widget.cget("text")
+            widget.configure(text=self.tr(widget._original_text))
+        if isinstance(widget, ttk.Combobox):
+            if not hasattr(widget, "_original_values"):
+                widget._original_values = tuple(widget.cget("values"))
+            widget.configure(values=[self.tr(value) for value in widget._original_values])
+        if isinstance(widget, ttk.Notebook):
+            if not hasattr(widget, "_original_tabs"):
+                widget._original_tabs = [(tab, widget.tab(tab, "text")) for tab in widget.tabs()]
+            for tab, title in widget._original_tabs:
+                widget.tab(tab, text=self.tr(title))
+        if isinstance(widget, ttk.Treeview):
+            if not hasattr(widget, "_original_headings"):
+                widget._original_headings = {column: widget.heading(column, "text") for column in widget.cget("columns")}
+            for column, title in widget._original_headings.items():
+                widget.heading(column, text=self.tr(title))
+        if isinstance(widget, tk.Toplevel):
+            if not hasattr(widget, "_original_title"):
+                widget._original_title = widget.title()
+            widget.title(self.tr(widget._original_title))
+        for child in widget.winfo_children():
+            self.localize(child)
+
+    def set_language(self, language):
+        if self.busy:
+            self.language_choice.set("简体中文" if self.language == "zh-CN" else "English")
+            return
+        self.language = normalize(language)
+        self.language_choice.set("简体中文" if self.language == "zh-CN" else "English")
+        for variable in self.ui_vars:
+            variable.retranslate()
+        self.localize(self.root)
+        if self.result:
+            self.result.language = self.language
+            self.refresh()
+            self.show_scope()
+            self.show_match()
+        else:
+            self.set_text(self.scope_text, "扫描后显示语言统计、导入来源、类别覆盖、跳过项和 AST 解析说明。")
+            self.set_text(self.detail, "扫描完成后选择一条线索查看代码位置。所有规则匹配均需人工复核。")
+        if not self.result or not self.result.ai_report:
+            self.set_text(self.ai_text, "尚未运行 AI 审计。可配置支持 Responses 或 Chat Completions 的接口。")
+        try:
+            self.store.save_preferences(language=self.language, base_url=self.base_url.get(), model=self.model.get(), api_format=self.api_format.get())
+        except (OSError, ValueError) as error:
+            self.error("保存失败", str(error))
+
+    def error(self, title, message):
+        messagebox.showerror(self.tr(title), self.tr(message))
+
+    def set_text(self, widget, text, translate=True):
         widget.configure(state="normal")
         widget.delete("1.0", "end")
-        widget.insert("1.0", text)
+        widget.insert("1.0", self.tr(text) if translate else text)
         widget.configure(state="disabled")
 
     def choose(self):
-        path = filedialog.askdirectory(title="选择需要审计的本地代码文件夹")
+        path = filedialog.askdirectory(title=self.tr("选择需要审计的本地代码文件夹"))
         if path:
             self.path.set(path)
 
@@ -209,14 +302,15 @@ class AuditApp:
                     self.events.put(("error", str(error)))
             threading.Thread(target=worker, daemon=True).start()
         ttk.Button(form, text="导入并扫描", style="Accent.TButton", command=confirmed).pack(anchor="e", pady=8)
+        self.localize(dialog)
 
     def save_preferences(self):
         try:
             base = validate_endpoint(self.base_url.get())
-            self.store.save_preferences(base_url=base, model=self.model.get(), api_format=self.api_format.get())
+            self.store.save_preferences(base_url=base, model=self.model.get(), api_format=self.api_format.get(), language=self.language)
             self.status.set("接口设置已保存在本机。API Key 未保存。")
         except (OSError, ValueError) as error:
-            messagebox.showerror("保存失败", str(error))
+            self.error("保存失败", str(error))
 
     def save_review(self):
         selected = self.tree.selection()
@@ -232,10 +326,11 @@ class AuditApp:
             self.status.set("复核标记已保存；相同路径 / 规则 / 代码的线索将在下次扫描时恢复状态。")
         except (OSError, ValueError) as error:
             item.status, item.note = old
-            messagebox.showerror("保存失败", str(error))
+            self.error("保存失败", str(error))
 
     def set_busy(self, busy, ai=False):
         self.busy = busy
+        self.language_combo.configure(state="disabled" if busy else "readonly")
         self.scan_button.configure(state="disabled" if busy else "normal")
         self.choose_button.configure(state="disabled" if busy else "normal")
         self.import_button.configure(state="disabled" if busy else "normal")
@@ -253,7 +348,7 @@ class AuditApp:
             return
         path = self.path.get().strip()
         if not path:
-            messagebox.showinfo("选择文件夹", "请先选择代码文件夹。")
+            messagebox.showinfo(self.tr("选择文件夹"), self.tr("请先选择代码文件夹。"))
             return
         self.cancel.clear()
         self.result = None
@@ -274,6 +369,7 @@ class AuditApp:
                     last_update = time.monotonic()
             try:
                 result = scan(path, cancel=self.cancel, progress=progress, collect_source=True)
+                result.language = self.language
                 result.import_metadata = import_info
                 try:
                     self.store.apply(result)
@@ -294,7 +390,7 @@ class AuditApp:
             if not key or not model:
                 raise ValueError("请填写 API Key 和模型名称（或设置对应环境变量）。")
         except ValueError as error:
-            messagebox.showerror("AI 配置", str(error))
+            self.error("AI 配置", str(error))
             return
         files = "\n".join(item["path"] for item in self.result.sources)
         dialog = tk.Toplevel(self.root)
@@ -302,7 +398,7 @@ class AuditApp:
         dialog.geometry("760x520")
         dialog.transient(self.root)
         dialog.grab_set()
-        ttk.Label(dialog, text=f"接口：{base}\n模型：{model}\n将发送 {len(self.result.sources)} 个完整源文件；预算外 {len(self.result.ai_omitted)} 个。\n请核查下方文件列表。发送后可能产生 API 费用，接收方按其政策处理代码。", wraplength=720, padding=15).pack(fill="x")
+        ttk.Label(dialog, text=self.tr(f"接口：{base}\n模型：{model}\n将发送 {len(self.result.sources)} 个完整源文件；预算外 {len(self.result.ai_omitted)} 个。\n请核查下方文件列表。发送后可能产生 API 费用，接收方按其政策处理代码。"), wraplength=720, padding=15).pack(fill="x")
         preview = ScrolledText(dialog, wrap="word", font=("Consolas", 10))
         preview.pack(fill="both", expand=True, padx=15)
         self.set_text(preview, "项目：" + self.result.root + "\n\n将发送：\n" + files + "\n\n预算外未发送：\n" + "\n".join(self.result.ai_omitted))
@@ -316,12 +412,24 @@ class AuditApp:
 
             def worker():
                 try:
-                    review(result, key, model, base, api_format)
+                    review(result, key, model, base, api_format, language=self.language)
                     self.events.put(("ai", None))
                 except Exception as error:
                     self.events.put(("error", str(error)))
             threading.Thread(target=worker, daemon=True).start()
         ttk.Button(dialog, text="确认发送并审计", command=confirmed).pack(pady=15)
+        self.localize(dialog)
+
+    def show_scope(self):
+        from .reports import localized_metadata
+        if not self.result:
+            return
+        value = self.result
+        notes = lambda rows: [{"path": row["path"], "reason": self.tr(row["reason"])} for row in rows]
+        scope = {self.tr("扫描目录"): value.root, self.tr("导入来源"): localized_metadata(value.import_metadata, self.language),
+                 self.tr("语言统计"): value.languages, self.tr("AST 说明"): notes(value.analysis_notes),
+                 self.tr("跳过项"): notes(value.skipped), self.tr("类别"): {self.tr(name): sum(m.layer == n for m in value.matches) for n, name in LAYERS.items()}}
+        self.set_text(self.scope_text, json.dumps(scope, ensure_ascii=False, indent=2))
 
     def poll(self):
         try:
@@ -341,20 +449,17 @@ class AuditApp:
                     self.result = value
                     self.refresh()
                     self.set_busy(False)
-                    scope = {"扫描目录": value.root, "导入来源": value.import_metadata,
-                             "语言统计": value.languages, "AST 说明": value.analysis_notes,
-                             "跳过项": value.skipped, "类别": {name: sum(m.layer == n for m in value.matches) for n, name in LAYERS.items()}}
-                    self.set_text(self.scope_text, json.dumps(scope, ensure_ascii=False, indent=2))
+                    self.show_scope()
                     state = "已取消，结果不完整" if value.cancelled else "达到上限，结果不完整" if value.truncated else "完成，部分 AST 未完成" if value.ast_incomplete else "完成"
                     self.status.set(f"{state} · {value.files_scanned} 个文件 · {len(value.matches)} 条待确认线索 · {len(value.skipped)} 项未读取 / 排除")
                 elif kind == "ai":
                     self.set_busy(False)
-                    self.set_text(self.ai_text, self.result.ai_report)
+                    self.set_text(self.ai_text, self.result.ai_report, translate=False)
                     self.status.set("AI 审计完成，结果尚需人工确认。可导出合并报告。")
                 elif kind == "error":
                     self.set_busy(False)
                     self.status.set("操作失败；已有本地扫描结果可导出。")
-                    messagebox.showerror("操作失败", value)
+                    self.error("操作失败", value)
         except queue.Empty:
             pass
         self.root.after(100, self.poll)
@@ -375,9 +480,9 @@ class AuditApp:
         priority, search = self.priority.get(), self.search.get().strip().lower()
         ordered = sorted(enumerate(self.result.matches), key=lambda pair: ({"高": 0, "中": 1, "信息": 2}[pair[1].priority], pair[1].path, pair[1].line))
         for index, match in ordered:
-            haystack = " ".join((match.path, match.rule, match.snippet, match.cwe, match.status, match.note)).lower()
+            haystack = " ".join((match.path, match.rule, self.tr(match.rule), match.snippet, match.cwe, match.status, self.tr(match.status), match.note)).lower()
             if (layer is None or match.layer == layer) and (priority == "全部优先级" or match.priority == priority) and (not search or search in haystack):
-                self.tree.insert("", "end", iid=str(index), values=(match.priority, match.rule, match.path, match.line, match.status))
+                self.tree.insert("", "end", iid=str(index), values=(self.tr(match.priority), self.tr(match.rule), match.path, match.line, self.tr(match.status)))
         if selected_rows and self.tree.exists(selected_rows[0]):
             self.tree.selection_set(selected_rows[0])
 
@@ -389,19 +494,20 @@ class AuditApp:
             self.review_note.set(item.note)
             self.review_button.configure(state="disabled" if self.busy else "normal")
             evidence = "\n".join(item.evidence) or "尚无完整数据流证据，请人工追踪。"
-            self.set_text(self.detail, f"{item.path}:{item.line}:{item.column} · {item.rule_id} · {item.cwe}\n优先级 {item.priority} · {item.confidence}\n\n{item.context or item.snippet}\n\n{evidence}\n\n建议：{item.recommendation}")
+            evidence = "\n".join(self.tr(line) for line in item.evidence) or self.tr("尚无完整数据流证据，请人工追踪。")
+            self.set_text(self.detail, f"{item.path}:{item.line}:{item.column} · {item.rule_id} · {item.cwe}\n{self.tr('优先级')} {self.tr(item.priority)} · {self.tr(item.confidence)}\n\n{item.context or item.snippet}\n\n{evidence}\n\n{self.tr('建议')}：{self.tr(item.recommendation)}")
 
     def export(self):
         if not self.result or self.busy:
             return
-        path = filedialog.asksaveasfilename(title="导出完整报告（包含所有类别，当前筛选仅影响界面）", initialfile=f"xss-audit-report-{datetime.now():%Y%m%d-%H%M%S}.html", defaultextension=".html", filetypes=[("HTML 离线报告", "*.html"), ("Markdown 报告", "*.md"), ("JSON 报告", "*.json"), ("SARIF 2.1.0", "*.sarif")])
+        path = filedialog.asksaveasfilename(title=self.tr("导出完整报告（包含所有类别，当前筛选仅影响界面）"), initialfile=f"xss-audit-report-{datetime.now():%Y%m%d-%H%M%S}.html", defaultextension=".html", filetypes=[(self.tr("HTML 离线报告"), "*.html"), (self.tr("Markdown 报告"), "*.md"), (self.tr("JSON 报告"), "*.json"), ("SARIF 2.1.0", "*.sarif")])
         if path:
             try:
                 fmt = {".json": "json", ".html": "html", ".sarif": "sarif"}.get(Path(path).suffix.lower(), "markdown")
-                write_report(self.result, path, fmt, overwrite=True)
+                write_report(self.result, path, fmt, overwrite=True, language=self.language)
                 self.status.set("报告已导出：" + path)
             except OSError as error:
-                messagebox.showerror("导出失败", str(error))
+                self.error("导出失败", str(error))
 
     def close(self):
         self.cancel.set()

@@ -66,7 +66,7 @@ class StateStore:
 
     def preferences(self):
         data = self.read("preferences.json")
-        return {key: str(data[key])[:500] for key in ("base_url", "model", "api_format") if key in data}
+        return {key: str(data[key])[:500] for key in ("base_url", "model", "api_format", "language") if key in data}
 
     def save_preferences(self, **values):
-        self.write("preferences.json", {key: str(values[key])[:500] for key in ("base_url", "model", "api_format") if key in values})
+        self.write("preferences.json", {key: str(values[key])[:500] for key in ("base_url", "model", "api_format", "language") if key in values})
