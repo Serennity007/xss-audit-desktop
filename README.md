@@ -1,123 +1,151 @@
 [English](README.md) · [简体中文](README.zh-CN.md)
 
+<p align="center">
+  <img src=".github/cover.svg" alt="XSS Audit Desktop: source-code security review with AST evidence, human triage and portable reports" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Serennity007/xss-audit-desktop/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Serennity007/xss-audit-desktop?style=flat-square&amp;color=147d78"></a>
+  <img alt="Windows 10 / 11 x64" src="https://img.shields.io/badge/Desktop-Windows%2010%20%2F%2011%20x64-147d78?style=flat-square">
+  <img alt="English and Simplified Chinese" src="https://img.shields.io/badge/Language-English%20%2F%20简体中文-147d78?style=flat-square">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-147d78?style=flat-square"></a>
+</p>
+
 # XSS Audit Desktop
 
-A code-review workbench with a **Windows desktop app, CLI, public GitHub imports, limited AST flow evidence and optional AI review**.
+**Review source code with the context, flow evidence and review decisions in one workbench.**
 
-Derived from [songjianyang/xss-audit](https://github.com/songjianyang/xss-audit), an MIT-licensed audit Skill. This independent derivative adds executable software and retains the [original playbook](SKILL.md), [license](LICENSE) and [upstream README](docs/UPSTREAM-README.md). It is not endorsed by the upstream author.
+Open a local project or import a public GitHub repository. Inspect security signals in JavaScript, TypeScript and Python, record your decisions, and share searchable HTML or SARIF reports. Use the Windows desktop app for interactive review and the CLI for repeatable checks.
 
-> Automatic matches are review signals. High / Medium / Info indicate review order, not confirmed vulnerability severity. Limited AST analysis does not cover complete cross-file call chains. No matches is not proof of safety; AI conclusions also require human verification.
+Local static scanning works without an API key. You can opt into AI review using your own endpoint, model and key.
 
-## Download
+**[Download Windows](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [Try the demo](#try-the-included-example) · [CLI](#command-line) · [Detailed guide](docs/USAGE.en.md) · [Analysis boundaries](docs/ANALYSIS.en.md)
 
-Download `XSS-Audit-v0.3.0-windows-x64.zip` from [Releases](https://github.com/Serennity007/xss-audit-desktop/releases/latest), then extract it:
+## Download and start
 
-- **XSS-Audit-Desktop.exe:** select a local folder or import a public GitHub repository, scan, inspect context/evidence, save review decisions and export a report.
-- **xss-audit-cli.exe:** terminal, batch and CI entry point.
-- **AI review:** included in both programs; bring your own API key. No third executable is needed.
+Download **[XSS-Audit-v0.3.0-windows-x64.zip](https://github.com/Serennity007/xss-audit-desktop/releases/download/v0.3.0/XSS-Audit-v0.3.0-windows-x64.zip)**, extract it, and choose an entrypoint:
 
-The Windows x64 executables require no Python installation. They target Windows 10/11 and were checked on Windows 11 x64. There is no installer, code signature or automatic updater. Compare `Get-FileHash -Algorithm SHA256 filename` with `SHA256SUMS.txt`.
-
-The ZIP includes the two executables, English/Chinese guides, licenses, a deliberately risky synthetic project under `examples/demo-project/`, and English/Chinese example reports. Do not execute or deploy the synthetic project.
-
-## English and Chinese
-
-English is the default. The desktop language selector switches between **English** and **简体中文** and saves the choice locally. The CLI selects its interface and report language with `--lang en` or `--lang zh-CN` (or `XSS_AUDIT_LANG`). AI requests ask for the selected language.
-
-Source code, paths, user notes, identifiers and existing model output remain verbatim. Switching languages does not call AI or rewrite an earlier AI response. JSON/SARIF preserve the existing canonical priority/status values for compatibility and add localized display labels. See [language coverage](docs/LANGUAGES.md).
-
-## Capabilities
-
-| Capability | Current implementation |
+| Program | Use it for |
 | --- | --- |
-| Public GitHub import | Repository URL or `owner/repository`, optional branch/tag/commit; Git is not required |
-| JavaScript / TypeScript / TSX | Tree-sitter parsing; partial source → variable → HTML / URL / dynamic-execution evidence |
-| Python | AST evidence for selected SQL construction, shell, file path, SSRF, deserialization and template paths |
-| Review workbench | Summary counts, category/priority/search filters, code context, evidence and guidance |
-| Triage | Needs review, confirmed risk, false positive and fixed decisions with locally saved notes |
-| Export | Markdown, JSON, offline searchable HTML and SARIF 2.1.0 |
-| AI scope protection | Prioritizes complete files with evidence and masks recognized credentials; records actual scope and omitted files |
+| **`XSS-Audit-Desktop.exe`** | Import a project, scan, inspect evidence, save review decisions and export reports. |
+| **`xss-audit-cli.exe`** | Run local or public-repository checks from a terminal, batch job or CI script. |
 
-## CLI examples
+Both executables include English and Simplified Chinese and run **without installing Python**. The ZIP also includes guides, licenses, a synthetic audit fixture and example reports. AI review is available inside both programs.
+
+Current binaries target Windows 10/11 x64 and were checked on Windows 11 x64. They are portable executables; there is no installer, code signature or automatic updater. Verify downloads against the release's `SHA256SUMS.txt` with `Get-FileHash -Algorithm SHA256`. Source users need Python 3.11+; macOS/Linux binaries are not published.
+
+## What you can do
+
+| Capability | What you get |
+| --- | --- |
+| **Import public GitHub code** | Accept a repository URL or `owner/repository`, with an optional branch, tag or commit. No Git installation is required. |
+| **Inspect AST flow evidence** | Follow selected inputs through variables and string construction into HTML, navigation, dynamic execution and supported Python calls. Evidence includes source lines and bounded propagation steps. |
+| **Review more than XSS** | Work through 20 review categories: the upstream 14 XSS categories plus SQL construction, shell execution, file paths, SSRF, deserialization and credentials. Depth varies by language/category. |
+| **Triage in context** | Filter by priority, category or keyword. Inspect surrounding code and guidance. Save needs-review, confirmed-risk, false-positive or fixed decisions with local notes. |
+| **Share the evidence** | Export Markdown, JSON, offline searchable HTML or SARIF 2.1.0. Keep findings, coverage notes and review context with the handoff. |
+| **Choose AI scope** | Inspect the selected complete-file list before sending from the desktop app. Input prioritizes evidence-bearing files, masks recognized credentials on a best-effort basis and records omissions. |
+
+### A review, step by step
+
+1. **Choose the code.** Select a folder or import a public GitHub snapshot at the ref you want to examine.
+2. **Inspect the signals.** Review priority, category, source context and available AST evidence. Check skipped files and analysis failures before interpreting coverage.
+3. **Record your decision.** Add notes and triage status. Revisit saved decisions when related code changes.
+4. **Export the review.** Share an offline report, save structured JSON, or use SARIF in a compatible review workflow. Add AI when you want another reading of the selected source scope.
+
+## Try the included example
+
+Scan the ZIP's `examples/demo-project/` folder in the desktop app, or inspect the committed [English HTML report](examples/demo-report.html), [Chinese HTML report](examples/demo-report.zh-CN.html) and [sample Markdown report](examples/sample-report.md).
+
+The TypeScript fixture contains this intentionally risky flow:
+
+```tsx
+const text: string = new URLSearchParams(window.location.search).get("q") ?? "";
+const html = "<p>" + text + "</p>";
+document.querySelector("#unsafe-preview")!.innerHTML = html;
+```
+
+Inspect the query-string input, string construction and HTML write together. The same fixture contains a `textContent` comparison; selected AST HTML-write rules distinguish that text output from an HTML sink. The Python fixture includes a parameter-bound SQL comparison.
+
+**The fixture is synthetic and deliberately risky. Scan it; do not run or deploy it.** Confirm the real application's input controls, output context and exploitability before calling a reported flow a vulnerability.
+
+## Command line
+
+Run from the extracted ZIP directory and create an output directory first:
 
 ```powershell
-.\xss-audit-cli.exe "D:\projects\web-app" --format html -o "D:\reports\audit.html"
-.\xss-audit-cli.exe "D:\projects\web-app" --lang zh-CN --format markdown -o "D:\reports\audit-zh.md"
-.\xss-audit-cli.exe --repo "owner/repository" --ref "main" --lang en --format sarif -o "D:\reports\audit.sarif"
+New-Item -ItemType Directory -Force .\reports | Out-Null
+
+# Local project → offline HTML
+.\xss-audit-cli.exe "D:\projects\web-app" --lang en --format html -o ".\reports\audit.html"
+
+# Public repository at a chosen ref → SARIF
+.\xss-audit-cli.exe --repo "owner/repository" --ref "main" --format sarif -o ".\reports\audit.sarif"
+
+# Gate on high-priority signals not marked false positive or fixed
 .\xss-audit-cli.exe "D:\projects\web-app" --min-priority high --ignore-reviewed --fail-on-match
+
 .\xss-audit-cli.exe --help
 ```
 
-The output directory must exist. Without `-o`, the CLI creates a timestamped Markdown report and never overwrites an existing file. Exit codes: `0` complete; `1` signals exist with `--fail-on-match`; `2` error or incomplete scan/AST analysis; `130` interrupted. Exit code `1` does not establish a vulnerability.
+Without `-o`, the CLI creates a timestamped report in the selected format. It does not overwrite existing output files. CLI filters affect exported results and the match gate; desktop filters affect the view while desktop export includes all signals.
 
-`--no-saved-review` ignores local triage records; `--destination` selects an import directory. Desktop filters affect the view while export includes all signals. CLI priority/review filters affect exported results and are recorded in the report. The former Chinese priority arguments remain accepted for compatibility.
-
-## GitHub snapshots and local state
-
-Import accepts public `github.com` repository homepages or `owner/repository`; provide the ref separately. It uses GitHub's ZIP archive API without an account token. Snapshots exclude Git history, submodule contents and LFS object payloads. HTTPS redirects are restricted to official GitHub hosts.
-
-Limits: 60 MiB compressed, 250 MiB extracted, 15,000 archive entries and 20 MiB per archive member. Extraction rejects out-of-scope paths, links, device names and case collisions. Project files are not executed and project dependencies are not installed.
-
-Windows data lives under `%LOCALAPPDATA%\XSSAudit`: `imports` holds downloaded source and `state` holds review records and non-secret preferences. Imports are not automatically deleted. The API key is never persisted. Review identities use the project, rule, path and nearby-code digest; distant semantic changes may not invalidate a saved decision, so old decisions still need review. Records are not synchronized across machines.
+| Exit code | Meaning |
+| --- | --- |
+| `0` | Completed. |
+| `1` | `--fail-on-match` is enabled and review signals remain after filtering. This is a review gate, not a confirmed vulnerability count. |
+| `2` | Error or incomplete scan/AST analysis; examine coverage notes. |
+| `130` | Interrupted. |
 
 ## Optional AI review
 
-Supports Responses and Chat Completions compatible endpoints. The default API base URL is `https://api.openai.com/v1`; choose a model available to your account. Endpoint compatibility, access and billing depend on the provider.
-
-Desktop: complete a local scan, fill in the endpoint/model/key, choose **Review scope and start AI**, inspect the actual file list and confirm sending.
-
-CLI: configure your own `OPENAI_API_KEY` and `XSS_AUDIT_MODEL`, then explicitly opt in:
+Use a Responses-compatible or Chat Completions-compatible endpoint with your own credentials. The desktop app shows the selected source-file list before you confirm sending. In the CLI, `--ai` opts into sending that scope:
 
 ```powershell
 # Configure your own OPENAI_API_KEY and XSS_AUDIT_MODEL first.
-.\xss-audit-cli.exe "D:\projects\web-app" --ai --lang en -o "D:\reports\ai-review.md"
-.\xss-audit-cli.exe "D:\projects\web-app" --ai --lang zh-CN --api-format chat --base-url "https://your-provider.example/v1" --model "your-model"
+.\xss-audit-cli.exe "D:\projects\web-app" --ai --lang en -o ".\reports\ai-review.md"
 ```
 
-`--ai` consents to sending scoped source files to the selected endpoint; API charges may apply. Recognized credential prefixes and selected sensitive assignments are masked, but unknown secrets may still be sent. Inspect sensitive content yourself. Remote endpoints require HTTPS; localhost may use HTTP. AI requests do not follow redirects or grant model execution tools. Responses requests use `store: false`, which does not guarantee the provider retains no data.
+The source budget is approximately **180,000 characters**. The client sends complete files, prioritizes AST evidence and rule signals, and lists omissions. It supplies the upstream playbook and Python review requirements; it does not automatically fetch the rest of the repository or batch more requests.
 
-The source budget is about **180,000 characters**, prioritizing AST evidence, then pattern signals and filename. Only complete files fit; omissions are listed. The original 14-layer playbook and Python review requirements are supplied, but the client does not automatically batch or fetch more files. It does not claim whole-repository coverage. Timeout is 180 seconds; closing the application cannot retract a sent request or cancel provider charges.
+The app does not persist your API key. Secret masking cannot identify every credential; inspect the source scope before sending it. The provider controls access, billing and retention. AI transport and language handling have been checked with a local mock service; paid-model integration and audit quality have not been benchmarked. [AI configuration and data handling →](docs/USAGE.en.md#optional-ai-review)
 
-Implementation follows [official OpenAI Responses documentation](https://developers.openai.com/api/docs/guides/migrate-to-responses?api-mode=responses). Protocol and language instructions are tested with a local mock service; no paid production model integration or audit-quality benchmark has been performed.
+## Coverage and interpretation
 
-## Detection boundaries
+| Input | Current analysis |
+| --- | --- |
+| Standalone JS / JSX / MJS / CJS | Pattern search and limited Tree-sitter flow analysis. |
+| Standalone TS / TSX | Pattern search and limited Tree-sitter flow analysis. |
+| Python | Pattern search and selected standard-library AST flow analysis. |
+| Vue / Svelte / Astro / MDX, HTML and supported templates | Pattern search; embedded scripts are not extracted for AST analysis. |
+| Supported styles, SVG/XML and JSON | Applicable pattern rules; depth differs from source-file AST analysis. |
 
-The original 14 XSS categories are retained, with SQL, shell, path, SSRF, deserialization and credential review categories added: 20 total. Analysis depth differs by language/category; see [analysis boundaries](docs/ANALYSIS.en.md).
+`High`, `Medium` and `Info` set **review priority**. Automated signals need human confirmation. The engine does not provide complete cross-file/cross-function analysis, dependency-advisory lookup or exploitability proof. A scan with no matches does not establish safety.
 
-- AST covers standalone Python, JS/JSX/MJS/CJS and TS/TSX files. Vue/Svelte/Astro/MDX and templates currently use pattern search only.
-- Pattern search can match safe code, comments and strings. AST propagation is limited and conservative, without complete cross-file/cross-function analysis or exploitability proof. No automatic dependency-advisory lookup is performed.
-- Recognized HTML sanitization does not establish URL, JavaScript or CSS safety, and sanitizer configuration/version still requires review.
-- Reads UTF-8 / UTF-8 BOM only. Default exclusions include dependencies, generated output, caches and editor directories; minified JS/CSS and linked/reparse directories are skipped.
-- Local scan limits: 1 MiB per file, 10,000 files, 100 MiB and 10,000 matches. Limits and parse failures are recorded; narrow the scope when incomplete.
-- Exported reports contain paths and snippets. Best-effort masking is not a guarantee that all secrets were identified.
+The scanner reads UTF-8/UTF-8 BOM files and skips common dependency, generated, cache and minified paths. It reports limits, read failures and parse failures. See [analysis boundaries](docs/ANALYSIS.en.md) and [scope/import limits](docs/USAGE.en.md#detection-boundaries).
 
-## Run from source
+## English and Chinese
 
-Python 3.11+ is required. The GUI additionally needs Tkinter (normally included with the official Windows Python installer). The CLI does not require Tkinter.
+English is the default. Use the desktop selector or CLI `--lang en` / `--lang zh-CN` for interface and report language. AI requests ask for the selected language. Code, paths, notes and existing AI responses remain verbatim; JSON/SARIF retain canonical identifiers and add localized display labels. [Language coverage →](docs/LANGUAGES.md)
+
+## Develop and contribute
 
 ```powershell
+git clone https://github.com/Serennity007/xss-audit-desktop.git
+cd xss-audit-desktop
 python -m pip install .
 python desktop.py
-python -m xss_audit "D:\projects\web-app" --lang en
+python -m xss_audit "examples/demo-project" --lang en
 python -m unittest discover -s tests -v
-xss-audit --version
 ```
 
-The source CLI can run on other Python 3.11+ systems; published binaries currently target Windows x64.
+Python 3.11+ is required. The GUI also needs Tkinter; the CLI does not. Source CLI users can run on other Python 3.11+ systems. [Windows builds and workflow status →](docs/USAGE.en.md#build-and-release)
 
-## Build and release
+Bug reports benefit from the version, language, coverage notes and a minimal sanitized example. Contributions to parser cases, evidence clarity, false-positive handling, reports and translations are welcome. Use [issues](https://github.com/Serennity007/xss-audit-desktop/issues) or submit a pull request; remove credentials and private source before sharing.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe scripts/build_release.py
-```
+## Credits and license
 
-`release/v0.3.0/` contains the two EXEs, portable ZIP and SHA-256 checksums; earlier version directories remain available. Parser notices are included in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). Packaging uses [PyInstaller](https://pyinstaller.org/en/stable/usage.html); indirect build dependencies are not fully locked, so byte-for-byte reproducibility is not claimed.
+Independent derivative of **[songjianyang/xss-audit](https://github.com/songjianyang/xss-audit)**, an MIT-licensed audit Skill. This repository adds the desktop app, CLI, scanner, limited AST analysis, optional AI transport and packaging. It retains the [original playbook](SKILL.md), [upstream README](docs/UPSTREAM-README.md) and attribution. The upstream author has not endorsed this derivative.
 
-Optional Actions templates live in `docs/workflows/`. They are not enabled because the current GitHub credential lacks `workflow` scope. Local builds and validation are used for this release.
+[MIT License](LICENSE) · [Attribution](NOTICE.md) · [Parser notices](THIRD-PARTY-NOTICES.txt) · [v0.3.0 release notes](docs/RELEASE-v0.3.0.md)
 
-## License
-
-[MIT](LICENSE). Attribution and derivative scope are in [NOTICE.md](NOTICE.md). Review code you own or are authorized to assess.
+Review code you own or are authorized to assess.
