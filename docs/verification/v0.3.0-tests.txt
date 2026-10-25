@@ -1,0 +1,57 @@
+test_bad_syntax_is_recorded (test_analysis.AnalysisTests.test_bad_syntax_is_recorded) ... ok
+test_html_sanitizer_does_not_make_navigation_safe (test_analysis.AnalysisTests.test_html_sanitizer_does_not_make_navigation_safe) ... ok
+test_js_function_scopes_and_branches (test_analysis.AnalysisTests.test_js_function_scopes_and_branches) ... ok
+test_js_safe_assignment_comments_and_text_content (test_analysis.AnalysisTests.test_js_safe_assignment_comments_and_text_content) ... ok
+test_js_url_search_params_and_alias_flow (test_analysis.AnalysisTests.test_js_url_search_params_and_alias_flow) ... ok
+test_python_paths_ssrf_deserialization_and_templates (test_analysis.AnalysisTests.test_python_paths_ssrf_deserialization_and_templates) ... ok
+test_python_safe_reassignment_and_scope (test_analysis.AnalysisTests.test_python_safe_reassignment_and_scope) ... ok
+test_python_shell_and_safe_argument_array (test_analysis.AnalysisTests.test_python_shell_and_safe_argument_array) ... ok
+test_python_sql_and_parameter_binding (test_analysis.AnalysisTests.test_python_sql_and_parameter_binding) ... ok
+test_scanner_redacts_and_prioritizes_ast_files_for_ai (test_analysis.AnalysisTests.test_scanner_redacts_and_prioritizes_ast_files_for_ai) ... ok
+test_tsx_and_typescript (test_analysis.AnalysisTests.test_tsx_and_typescript) ... ok
+test_unicode_columns (test_analysis.AnalysisTests.test_unicode_columns) ... ok
+test_ai_chat_and_incomplete_responses (test_audit.AuditTests.test_ai_chat_and_incomplete_responses) ... ok
+test_ai_errors_do_not_echo_response_or_key (test_audit.AuditTests.test_ai_errors_do_not_echo_response_or_key) ... ok
+test_ai_masks_source_values_before_network_request (test_audit.AuditTests.test_ai_masks_source_values_before_network_request) ... ok
+test_ai_real_http_transport_with_local_mock_service (test_audit.AuditTests.test_ai_real_http_transport_with_local_mock_service) ... ok
+test_ai_responses_request_and_report (test_audit.AuditTests.test_ai_responses_request_and_report) ... ok
+test_all_layers_are_review_signals_with_positions (test_audit.AuditTests.test_all_layers_are_review_signals_with_positions) ... ok
+test_cancellation_and_limits_are_not_complete (test_audit.AuditTests.test_cancellation_and_limits_are_not_complete) ... ok
+test_cli_exit_codes_export_and_ai_failure_keeps_local_report (test_audit.AuditTests.test_cli_exit_codes_export_and_ai_failure_keeps_local_report) ... Files scanned: 1; review signals: 1. Report: <TEMP>\tmp9v05kayh\out.json
+Error: [Errno 17] File exists: 'C:\\Users\\ztl\\AppData\\Local\\Temp\\tmp9v05kayh\\out.json'
+Complete files to send: 2; outside the budget: 0.
+Files scanned: 2; review signals: 3. Report: <TEMP>\tmp9v05kayh\ai.md
+AI failed; the local report was retained: AI review requires an API key and model name.
+ok
+test_cli_incomplete_ast_and_priority_filter_are_explicit (test_audit.AuditTests.test_cli_incomplete_ast_and_priority_filter_are_explicit) ... Files scanned: 1; review signals: 0. Report: <TEMP>\tmp7xx57mu6\incomplete.json
+The scan is incomplete. Narrow the scope.
+Files scanned: 2; review signals: 1. Report: <TEMP>\tmp7xx57mu6\filtered.json
+ok
+test_exclusions_unread_and_oversize_are_recorded (test_audit.AuditTests.test_exclusions_unread_and_oversize_are_recorded) ... ok
+test_reports_do_not_overwrite_or_dump_whole_files (test_audit.AuditTests.test_reports_do_not_overwrite_or_dump_whole_files) ... ok
+test_source_budget_uses_complete_files_and_records_omissions (test_audit.AuditTests.test_source_budget_uses_complete_files_and_records_omissions) ... ok
+test_symlink_is_not_followed (test_audit.AuditTests.test_symlink_is_not_followed) ... skipped 'Windows symlink permission not available'
+test_scan_filter_detail_and_export (test_gui.DesktopTests.test_scan_filter_detail_and_export) ... ok
+test_ai_request_uses_selected_language (test_i18n.LocalizationTests.test_ai_request_uses_selected_language) ... ok
+test_catalog_and_dynamic_messages (test_i18n.LocalizationTests.test_catalog_and_dynamic_messages) ... ok
+test_cli_help_in_both_languages (test_i18n.LocalizationTests.test_cli_help_in_both_languages) ... ok
+test_default_html_is_english_and_chinese_is_available (test_i18n.LocalizationTests.test_default_html_is_english_and_chinese_is_available) ... ok
+test_gui_switches_without_losing_review_state (test_i18n.LocalizationTests.test_gui_switches_without_losing_review_state) ... ok
+test_json_state_and_fingerprints_are_language_independent (test_i18n.LocalizationTests.test_json_state_and_fingerprints_are_language_independent) ... ok
+test_sarif_rule_ids_and_user_text_are_preserved (test_i18n.LocalizationTests.test_sarif_rule_ids_and_user_text_are_preserved) ... ok
+test_cancel_and_disallowed_redirect (test_importer.ImportTests.test_cancel_and_disallowed_redirect) ... ok
+test_case_collisions_limits_and_existing_directory (test_importer.ImportTests.test_case_collisions_limits_and_existing_directory) ... ok
+test_download_snapshot_and_preserve_parent_on_failure (test_importer.ImportTests.test_download_snapshot_and_preserve_parent_on_failure) ... ok
+test_extract_normal_archive (test_importer.ImportTests.test_extract_normal_archive) ... ok
+test_reject_traversal_windows_devices_streams_and_links (test_importer.ImportTests.test_reject_traversal_windows_devices_streams_and_links) ... ok
+test_repository_allowlist (test_importer.ImportTests.test_repository_allowlist) ... ok
+test_export_all_formats_and_no_overwrite (test_reports_state.ReportsStateTests.test_export_all_formats_and_no_overwrite) ... ok
+test_html_escapes_code_and_model_output (test_reports_state.ReportsStateTests.test_html_escapes_code_and_model_output) ... ok
+test_preferences_never_save_api_key_and_corruption_is_reported (test_reports_state.ReportsStateTests.test_preferences_never_save_api_key_and_corruption_is_reported) ... ok
+test_review_roundtrip_and_changed_code_does_not_inherit (test_reports_state.ReportsStateTests.test_review_roundtrip_and_changed_code_does_not_inherit) ... ok
+test_sarif_uses_relative_encoded_paths_and_unverified_results (test_reports_state.ReportsStateTests.test_sarif_uses_relative_encoded_paths_and_unverified_results) ... ok
+
+----------------------------------------------------------------------
+Ran 44 tests in 0.892s
+
+OK (skipped=1)

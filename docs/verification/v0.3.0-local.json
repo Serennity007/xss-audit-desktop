@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "application_version": "0.3.0",
+  "observed_at": "2026-10-26T03:07:54.428774+08:00",
+  "timezone": "Asia/Shanghai",
+  "source_commit": "35ca8e061e89123640656621cf84228ae4f166dd",
+  "runtime_tree": "7eabb0b63da523be552d95d10ebc655e0a0c2965",
+  "tests_tree": "1ba8ff64f8c5ac3c52bcfc1b3270a07717858d80",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.11.9",
+  "test_command": "./.venv/Scripts/python.exe -m unittest discover -s tests -v",
+  "unit_tests": {
+    "run": 44,
+    "passed": 43,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [
+      {
+        "test": "test_audit.AuditTests.test_symlink_is_not_followed",
+        "reason": "Windows symlink permission not available"
+      }
+    ]
+  },
+  "portable_cli_smoke": [
+    {
+      "language": "en",
+      "format": "markdown",
+      "exit_code": 0,
+      "report_created": true
+    },
+    {
+      "language": "en",
+      "format": "json",
+      "exit_code": 0,
+      "report_created": true,
+      "files_scanned": 2,
+      "review_signals": 11,
+      "ast_incomplete": false
+    },
+    {
+      "language": "en",
+      "format": "html",
+      "exit_code": 0,
+      "report_created": true
+    },
+    {
+      "language": "en",
+      "format": "sarif",
+      "exit_code": 0,
+      "report_created": true,
+      "sarif_version": "2.1.0"
+    },
+    {
+      "language": "zh-CN",
+      "format": "markdown",
+      "exit_code": 0,
+      "report_created": true
+    },
+    {
+      "language": "zh-CN",
+      "format": "json",
+      "exit_code": 0,
+      "report_created": true,
+      "files_scanned": 2,
+      "review_signals": 11,
+      "ast_incomplete": false
+    },
+    {
+      "language": "zh-CN",
+      "format": "html",
+      "exit_code": 0,
+      "report_created": true
+    },
+    {
+      "language": "zh-CN",
+      "format": "sarif",
+      "exit_code": 0,
+      "report_created": true,
+      "sarif_version": "2.1.0"
+    }
+  ],
+  "local_release_sha256": {
+    "XSS-Audit-Desktop.exe": "7db793589986d2a6186f4779774b0c04737ab77af874e9beed9dd5cee011ddae",
+    "xss-audit-cli.exe": "62ec8e44ef624c7d05157120438b8142ec68ad6a4216b119b4adc7266a027164",
+    "XSS-Audit-v0.3.0-windows-x64.zip": "995497fd22325c1374ddb891c1fe573299c73f08ef438b0e0017ce6b23bec70e"
+  },
+  "limits": [
+    "Local qualification, not hosted CI or a signed build attestation.",
+    "No detection-quality benchmark or paid-model integration test.",
+    "Only this Windows/Python environment was executed.",
+    "Skipped checks remain unverified."
+  ],
+  "release_asset_digest_check": "Matched GitHub v0.3.0 asset digests for the two EXEs and ZIP."
+}

@@ -19,7 +19,7 @@
 
 本地静态扫描无需 API Key。需要 AI 辅助时，再使用自己的接口、模型和密钥启用。
 
-**[下载 Windows 版](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [试用示例](#先用附带示例体验) · [命令行](#命令行使用) · [详细指南](docs/USAGE.zh-CN.md) · [分析边界](docs/ANALYSIS.md)
+**[下载 Windows 版](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [试用示例](#先用附带示例体验) · [文档导航](docs/README.md) · [验证记录](docs/VERIFICATION.md#中文) · [参与贡献](docs/CONTRIBUTING.zh-CN.md)
 
 ## 下载即用
 
@@ -129,6 +129,8 @@ New-Item -ItemType Directory -Force .\reports | Out-Null
 
 ## 开发与贡献
 
+由 [Serennity007](https://github.com/Serennity007) 维护。[本地验证记录](docs/VERIFICATION.md#中文)列明 **43 项测试通过、1 项跳过**，另有 **8 组便携 CLI 导出检查**通过，并说明跳过原因，区分本地验证、托管 CI 与检测质量评测。
+
 ```powershell
 git clone https://github.com/Serennity007/xss-audit-desktop.git
 cd xss-audit-desktop
@@ -141,6 +143,10 @@ python -m unittest discover -s tests -v
 需要 Python 3.11+；GUI 另需 Tkinter，CLI 不需要。源码 CLI 可在其他提供 Python 3.11+ 的系统运行。源码安装、导入控制、本机存储、构建步骤及工作流模板状态见[详细指南](docs/USAGE.zh-CN.md)。
 
 反馈问题时，请附版本、语言、相关覆盖说明及去敏后的最小示例。欢迎改进解析案例、证据可读性、误报处理、报告和翻译。可提交 [Issue](https://github.com/Serennity007/xss-audit-desktop/issues) 或 Pull Request，分享前移除密钥与私有源码。
+
+**[贡献指南](docs/CONTRIBUTING.zh-CN.md)** · [检测反馈](https://github.com/Serennity007/xss-audit-desktop/issues/new?template=detection_feedback.yml) · [安全政策](docs/SECURITY.zh-CN.md) · [版本记录](CHANGELOG.md)
+
+本软件自身的漏洞请使用[私密漏洞报告](https://github.com/Serennity007/xss-audit-desktop/security/advisories/new)；去敏后的软件问题、检测反馈与工作流建议可走公开表单。
 
 ## 致谢与许可
 

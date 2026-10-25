@@ -19,7 +19,7 @@ Open a local project or import a public GitHub repository. Inspect security sign
 
 Local static scanning works without an API key. You can opt into AI review using your own endpoint, model and key.
 
-**[Download Windows](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [Try the demo](#try-the-included-example) · [CLI](#command-line) · [Detailed guide](docs/USAGE.en.md) · [Analysis boundaries](docs/ANALYSIS.en.md)
+**[Download Windows](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [Try the demo](#try-the-included-example) · [Documentation](docs/README.md) · [Verification](docs/VERIFICATION.md) · [Contribute](CONTRIBUTING.md)
 
 ## Download and start
 
@@ -129,6 +129,8 @@ English is the default. Use the desktop selector or CLI `--lang en` / `--lang zh
 
 ## Develop and contribute
 
+Maintained by [Serennity007](https://github.com/Serennity007). The [local verification record](docs/VERIFICATION.md) reports **43 tests passed, 1 skipped**, plus **8 portable-CLI export checks**. It identifies the skipped test and distinguishes local qualification from hosted CI and detection-quality benchmarking.
+
 ```powershell
 git clone https://github.com/Serennity007/xss-audit-desktop.git
 cd xss-audit-desktop
@@ -141,6 +143,10 @@ python -m unittest discover -s tests -v
 Python 3.11+ is required. The GUI also needs Tkinter; the CLI does not. Source CLI users can run on other Python 3.11+ systems. [Windows builds and workflow status →](docs/USAGE.en.md#build-and-release)
 
 Bug reports benefit from the version, language, coverage notes and a minimal sanitized example. Contributions to parser cases, evidence clarity, false-positive handling, reports and translations are welcome. Use [issues](https://github.com/Serennity007/xss-audit-desktop/issues) or submit a pull request; remove credentials and private source before sharing.
+
+**[Contribution guide](CONTRIBUTING.md)** · [Detection feedback](https://github.com/Serennity007/xss-audit-desktop/issues/new?template=detection_feedback.yml) · [Security policy](SECURITY.md) · [Changelog](CHANGELOG.md)
+
+For a vulnerability in this application, use [private vulnerability reporting](https://github.com/Serennity007/xss-audit-desktop/security/advisories/new). Use public issue forms for sanitized bugs, detection feedback and workflow requests.
 
 ## Credits and license
 

@@ -1,0 +1,59 @@
+name: Bug report / 软件问题
+description: Report reproducible application behavior with a sanitized example.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a vulnerability in this application, use the private security-report link instead of a public issue.
+        请勿公开密钥、私有源码或软件漏洞细节；安全问题走私密报告入口。
+  - type: input
+    id: version
+    attributes:
+      label: Version or source commit / 版本
+      placeholder: v0.3.0 or exact commit SHA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment / 环境
+      description: OS, architecture, EXE or source, and Python version if applicable.
+    validations:
+      required: true
+  - type: dropdown
+    id: entrypoint
+    attributes:
+      label: Entrypoint / 程序入口
+      options:
+        - Desktop
+        - CLI
+        - Source API or tests
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps and minimal example / 最小复现
+      description: Include the command or UI steps and a synthetic input. Do not attach private source.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior / 预期与实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics / 诊断信息
+      description: Language, exit code, relevant coverage/parse notes and sanitized error output.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Public-report check / 公开内容确认
+      options:
+        - label: This report contains no credentials or confidential source, and does not disclose a vulnerability in this application.
+          required: true

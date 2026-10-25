@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report / 私密漏洞报告
+    url: https://github.com/Serennity007/xss-audit-desktop/security/advisories/new
+    about: Report vulnerabilities in this application privately; do not publish sensitive details in an issue.
+  - name: Usage and documentation / 使用说明
+    url: https://github.com/Serennity007/xss-audit-desktop/blob/main/docs/README.md
+    about: Start here for installation, CLI, AI settings, language support and analysis boundaries.

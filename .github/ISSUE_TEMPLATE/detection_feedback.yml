@@ -1,0 +1,57 @@
+name: Detection feedback / 检测反馈
+description: Explain a suspected false positive or missed case using synthetic code.
+title: "[Detection] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use synthetic or authorized, sanitized code. Vulnerabilities in another project belong in that project's disclosure process.
+        请提供构造或已获授权的去敏代码；其他项目漏洞应联系该项目维护者。
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Feedback type / 反馈类型
+      options:
+        - Suspected false positive
+        - Suspected missed case
+        - Incorrect or unclear evidence
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or source commit / 版本
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: Language and extension / 语言与扩展名
+      placeholder: TypeScript .tsx, Python .py, Vue .vue
+    validations:
+      required: true
+  - type: input
+    id: rule
+    attributes:
+      label: Rule/category and priority, if present / 规则信息
+  - type: textarea
+    id: example
+    attributes:
+      label: Minimal synthetic code / 最小构造代码
+      description: Include enough context for the source, propagation and destination. Add a safe comparison if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Actual evidence and expected interpretation / 实际证据与预期解释
+      description: Explain the input control, output context or sanitization. Priority is not confirmed severity.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Reproduction and coverage notes / 复现与覆盖说明
+      description: Command or UI steps, parse failures, exclusions and whether the scan was complete.
+    validations:
+      required: true

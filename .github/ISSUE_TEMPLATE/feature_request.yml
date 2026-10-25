@@ -1,0 +1,29 @@
+name: Feature request / 功能建议
+description: Describe a concrete review workflow and how to verify the improvement.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Review task and current limitation / 使用场景与限制
+      description: What code-review task are you trying to complete?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior / 期望行为
+      description: Describe the input, action and visible result. Mention any source-sharing or network implications.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance example / 验收案例
+      description: Give a small example that would demonstrate the improvement.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Current workaround and alternatives / 替代方式
