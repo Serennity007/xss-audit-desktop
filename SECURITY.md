@@ -2,12 +2,13 @@
 
 ## Scope of Security Reports
 
-This repository contains an audit playbook and documentation rather than a runtime application. Security reports should concern the repository itself, including:
+This derivative contains a desktop application, CLI, heuristic scanner, and optional AI client in addition to the original audit playbook. Security reports should concern this repository itself, including:
 
 - Unsafe or contradictory audit instructions.
 - A rule that creates a significant security risk for users.
 - Malicious or unintended repository content.
 - Sensitive information accidentally included in the repository or its examples.
+- Unexpected project execution, out-of-scope file reads, credential exposure, or transmission without AI opt-in.
 
 Vulnerabilities discovered in another project by using this skill should be reported to that project's maintainers through its own security process, not to this repository.
 
