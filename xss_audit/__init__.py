@@ -1,3 +1,3 @@
 """Local XSS review assistant, derived from songjianyang/xss-audit."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

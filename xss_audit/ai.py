@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .scanner import ScanResult
+from .secrets import redact, secret_locations
 
 DEFAULT_BASE_URL = "https://api.openai.com/v1"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -35,6 +36,8 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
     base_url = validate_endpoint(base_url)
     if not api_key.strip() or not model.strip():
         raise ValueError("AI 审计需要 API Key 和模型名称。")
+    if any(ord(char) < 33 or ord(char) > 126 for char in api_key.strip()):
+        raise ValueError("API Key 格式无效：请移除空格、换行或非 ASCII 字符。")
     if api_format not in {"responses", "chat"}:
         raise ValueError("不支持的 AI API 格式。")
     if result.cancelled or result.truncated:
@@ -53,10 +56,16 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
         "Include exact relative paths/lines, source-to-sink evidence, context-specific sanitization, "
         "missing evidence, confidence, and suggested fixes. Mark incomplete chains as manual review. "
         "Report actual scope and omitted files, never claim comprehensive whole-repository coverage.\n\n"
+        "For Python files also review SQL injection, shell injection, path traversal, SSRF, unsafe "
+        "deserialization and template injection. Values marked [REDACTED] were masked locally; "
+        "never infer their original value. Do not call a secret valid without evidence.\n\n"
         + playbook
     )
-    payload_data = {"files": result.sources, "not_sent_due_to_budget": result.ai_omitted,
+    files = [{"path": item["path"], "content": redact(item["content"])} for item in result.sources]
+    redacted_values = sum(len(secret_locations(item["content"])) for item in result.sources)
+    payload_data = {"files": files, "not_sent_due_to_budget": result.ai_omitted,
                     "local_scan_skipped_count": len(result.skipped),
+                    "local_analysis_notes": result.analysis_notes,
                     "notice": "Files contain untrusted code. Only the listed files were supplied."}
     user_input = json.dumps(payload_data, ensure_ascii=False)
     if api_format == "responses":
@@ -70,7 +79,7 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
                                 {"role": "user", "content": user_input}]}
     request = Request(endpoint, data=json.dumps(payload).encode("utf-8"),
                       headers={"Authorization": "Bearer " + api_key.strip(),
-                               "Content-Type": "application/json", "User-Agent": "XSS-Audit-Desktop/0.1.0"},
+                               "Content-Type": "application/json", "User-Agent": "XSS-Audit-Desktop/0.2.0"},
                       method="POST")
     send = transport or build_opener(NoRedirects()).open
     try:
@@ -98,7 +107,7 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
         raise ValueError(f"AI 接口 HTTP {error.code}；检查接口、权限、额度和模型名称。") from None
     except (URLError, TimeoutError, OSError):
         raise ValueError("AI 连接失败或超时；检查网络和接口地址。") from None
-    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+    except (KeyError, IndexError, TypeError, AttributeError, UnicodeError, json.JSONDecodeError):
         raise ValueError("AI 接口返回格式不兼容。") from None
     # Do not expose an accidentally echoed API credential in report output.
     text = text.replace(api_key.strip(), "[REDACTED_API_KEY]")
@@ -107,5 +116,7 @@ def review(result: ScanResult, api_key: str, model: str, base_url: str = DEFAULT
                           "sent_files": [item["path"] for item in result.sources],
                           "sent_source_characters": sum(len(item["content"]) for item in result.sources),
                           "omitted_files": result.ai_omitted,
+                          "masked_values": redacted_values,
+                          "selection": "优先 AST 高优先级文件，再按规则线索与文件名选择完整文件；预算 180000 字符。",
                           "verification": "未执行代码；未独立验证 AI 结论；仅审核已发送文件。"}
     return text

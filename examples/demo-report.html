@@ -1,0 +1,154 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>XSS Audit 0.2.0 · 审计报告</title><style>
+:root{font-family:Segoe UI,Microsoft YaHei,sans-serif;color:#17263b;background:#f2f5fa}body{max-width:1100px;margin:0 auto;padding:32px}header{background:#142743;color:white;border-radius:18px;padding:30px}h1{margin:0 0 12px}p{line-height:1.6;overflow-wrap:anywhere}.muted{color:#bfd2ee}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}.card{background:white;border:1px solid #dce4ef;border-radius:12px;padding:20px}.card b{display:block;font-size:30px;color:#245bd8}.card span{color:#54647a}.filters{display:flex;gap:12px;margin:22px 0;flex-wrap:wrap}input,select{padding:12px;border:1px solid #c3cee0;border-radius:8px;font:inherit}input{flex:1;min-width:200px}.finding,section{background:white;padding:24px;border:1px solid #dce4ef;border-radius:12px;margin:14px 0}h2{font-size:19px;margin:14px 0 8px}.meta,.location{color:#53647b;font-size:14px}.badge{color:#245bd8;background:#edf3ff;border-radius:5px;padding:5px 8px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7fb;border-radius:8px;padding:16px;font:13px/1.7 Consolas,monospace}summary{cursor:pointer;color:#245bd8}[hidden]{display:none!important}@media(max-width:650px){body{padding:12px}.cards{grid-template-columns:repeat(2,1fr)}}@media print{.filters{display:none}article{break-inside:avoid}body{padding:0}}
+</style></head><body><header><h1>XSS AUDIT · 代码审计报告</h1><p class="muted">v0.2.0 · 2026-10-25T14:01:42.146045+00:00 · 扫描完成</p><p>examples/demo-project (synthetic demonstration)</p></header>
+<div class="cards"><div class="card"><b>2</b><span>扫描文件</span></div><div class="card"><b>11</b><span>全部线索</span></div><div class="card"><b>9</b><span>高优先复核</span></div><div class="card"><b>0</b><span>已复核</span></div></div><p>优先级表示复核顺序，不是已确认漏洞等级。有限 AST 分析不解析完整跨文件调用链；零匹配不代表安全。识别出的敏感值已尽力遮蔽，分享前仍需检查。</p>
+<div class="filters"><input id="search" placeholder="搜索文件、规则、证据或代码" aria-label="搜索"><select id="priority"><option value="">全部优先级</option><option>高</option><option>中</option><option>信息</option></select><span id="count"></span></div>
+<main><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> JS-HTML-FLOW · CWE-79 · 待人工确认</div>
+<h2>外部输入到 HTML 写入</h2><p class="location">browser.tsx:5:3</p>
+<p>AST 可见数据流（待复核）</p><pre>    2   function previewExample() {
+    3     const text: string = new URLSearchParams(window.location.search).get(&quot;q&quot;) ?? &quot;&quot;;
+    4     const html = &quot;&lt;p&gt;&quot; + text + &quot;&lt;/p&gt;&quot;;
+    5 &gt;   document.querySelector(&quot;#unsafe-preview&quot;)!.innerHTML = html;
+    6     window.open(text);
+    7     const view = &lt;section dangerouslySetInnerHTML={{ __html: text }} /&gt;;
+    8     // Safe text output: should not produce an AST HTML-write finding.</pre>
+<details><summary>查看数据流证据和建议</summary><pre>L3: 潜在外部输入 window.location.search
+L3: 赋值给 text
+L4: 赋值给 html
+L5: 到达 document.querySelector(&quot;#unsafe-preview&quot;)!.innerHTML
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>使用 textContent；需要富文本时在最终 HTML 输出前采用可信净化器。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> JS-URL-FLOW · CWE-79 · 待人工确认</div>
+<h2>外部输入到浏览器导航</h2><p class="location">browser.tsx:6:3</p>
+<p>AST 可见数据流（待复核）</p><pre>    3     const text: string = new URLSearchParams(window.location.search).get(&quot;q&quot;) ?? &quot;&quot;;
+    4     const html = &quot;&lt;p&gt;&quot; + text + &quot;&lt;/p&gt;&quot;;
+    5     document.querySelector(&quot;#unsafe-preview&quot;)!.innerHTML = html;
+    6 &gt;   window.open(text);
+    7     const view = &lt;section dangerouslySetInnerHTML={{ __html: text }} /&gt;;
+    8     // Safe text output: should not produce an AST HTML-write finding.
+    9     document.querySelector(&quot;#safe-preview&quot;)!.textContent = text;</pre>
+<details><summary>查看数据流证据和建议</summary><pre>L3: 潜在外部输入 window.location.search
+L3: 赋值给 text
+L6: 到达 window.open
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>校验解析后的协议、域名和具体导航上下文。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> JS-HTML-FLOW · CWE-79 · 待人工确认</div>
+<h2>外部输入到 React 原始 HTML</h2><p class="location">browser.tsx:7:25</p>
+<p>AST 可见数据流（待复核）</p><pre>    4     const html = &quot;&lt;p&gt;&quot; + text + &quot;&lt;/p&gt;&quot;;
+    5     document.querySelector(&quot;#unsafe-preview&quot;)!.innerHTML = html;
+    6     window.open(text);
+    7 &gt;   const view = &lt;section dangerouslySetInnerHTML={{ __html: text }} /&gt;;
+    8     // Safe text output: should not produce an AST HTML-write finding.
+    9     document.querySelector(&quot;#safe-preview&quot;)!.textContent = text;
+   10     return view;</pre>
+<details><summary>查看数据流证据和建议</summary><pre>L3: 潜在外部输入 window.location.search
+L3: 赋值给 text
+L7: 到达 dangerouslySetInnerHTML
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>优先使用普通 JSX 文本；富文本需要最终 HTML 净化。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> PY-SQL-FLOW · CWE-89 · 待人工确认</div>
+<h2>外部输入到 SQL 语句构造</h2><p class="location">server.py:8:5</p>
+<p>AST 可见数据流（待复核）</p><pre>    5       # request is a fictional framework request object, not imported or executed.
+    6       value = request.args.get(&quot;value&quot;)
+    7       query = &quot;SELECT * FROM examples WHERE name = &#x27;&quot; + value + &quot;&#x27;&quot;
+    8 &gt;     cursor.execute(query)
+    9       os.system(value)
+   10       open(value)
+   11       requests.get(value)</pre>
+<details><summary>查看数据流证据和建议</summary><pre>L6: 潜在外部输入 request.args
+L6: 赋值给 value
+L7: 赋值给 query
+L8: 到达 cursor.execute
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>使用数据库参数绑定，不拼接外部输入到 SQL 字符串。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> PY-SHELL-FLOW · CWE-78 · 待人工确认</div>
+<h2>外部输入到 Shell 命令</h2><p class="location">server.py:9:5</p>
+<p>AST 可见数据流（待复核）</p><pre>    6       value = request.args.get(&quot;value&quot;)
+    7       query = &quot;SELECT * FROM examples WHERE name = &#x27;&quot; + value + &quot;&#x27;&quot;
+    8       cursor.execute(query)
+    9 &gt;     os.system(value)
+   10       open(value)
+   11       requests.get(value)
+   12       pickle.loads(value)</pre>
+<details><summary>查看数据流证据和建议</summary><pre>L6: 潜在外部输入 request.args
+L6: 赋值给 value
+L9: 到达 os.system
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>使用参数数组和 shell=False；对每个参数做业务约束。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> PY-PATH-FLOW · CWE-22 · 待人工确认</div>
+<h2>外部输入到文件路径</h2><p class="location">server.py:10:5</p>
+<p>AST 可见数据流（待复核）</p><pre>    7       query = &quot;SELECT * FROM examples WHERE name = &#x27;&quot; + value + &quot;&#x27;&quot;
+    8       cursor.execute(query)
+    9       os.system(value)
+   10 &gt;     open(value)
+   11       requests.get(value)
+   12       pickle.loads(value)
+   13       render_template_string(value)</pre>
+<details><summary>查看数据流证据和建议</summary><pre>L6: 潜在外部输入 request.args
+L6: 赋值给 value
+L10: 到达 open
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>解析规范路径后检查允许根目录；避免仅用字符串前缀校验。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> PY-SSRF-FLOW · CWE-918 · 待人工确认</div>
+<h2>外部输入到服务端请求</h2><p class="location">server.py:11:5</p>
+<p>AST 可见数据流（待复核）</p><pre>    8       cursor.execute(query)
+    9       os.system(value)
+   10       open(value)
+   11 &gt;     requests.get(value)
+   12       pickle.loads(value)
+   13       render_template_string(value)
+   14   </pre>
+<details><summary>查看数据流证据和建议</summary><pre>L6: 潜在外部输入 request.args
+L6: 赋值给 value
+L11: 到达 requests.get
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>限制协议、目标和重定向；结合网络出口限制与解析结果检查。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> PY-DESERIALIZE-FLOW · CWE-502 · 待人工确认</div>
+<h2>外部输入到反序列化</h2><p class="location">server.py:12:5</p>
+<p>AST 可见数据流（待复核）</p><pre>    9       os.system(value)
+   10       open(value)
+   11       requests.get(value)
+   12 &gt;     pickle.loads(value)
+   13       render_template_string(value)
+   14
+   15   </pre>
+<details><summary>查看数据流证据和建议</summary><pre>L6: 潜在外部输入 request.args
+L6: 赋值给 value
+L12: 到达 pickle.loads
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>使用安全数据格式与安全解析器，避免对不可信内容反序列化对象。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="高">
+<div class="meta"><span class="badge">高优先级</span> PY-TEMPLATE-FLOW · CWE-79 · 待人工确认</div>
+<h2>外部输入到模板 / 信任绕过</h2><p class="location">server.py:13:5</p>
+<p>AST 可见数据流（待复核）</p><pre>   10       open(value)
+   11       requests.get(value)
+   12       pickle.loads(value)
+   13 &gt;     render_template_string(value)
+   14
+   15
+   16   def safer_query(cursor):</pre>
+<details><summary>查看数据流证据和建议</summary><pre>L6: 潜在外部输入 request.args
+L6: 赋值给 value
+L13: 到达 render_template_string
+仅当前函数 / 文件的保守传播；未证明可利用性。</pre><p>固定模板源码，通过参数传入数据并保持上下文转义。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="信息">
+<div class="meta"><span class="badge">信息优先级</span> XSS-L03 · CWE-79 · 待人工确认</div>
+<h2>URL 校验复核</h2><p class="location">browser.tsx:3:28</p>
+<p>语法信号</p><pre>    1   // Synthetic training fixture. Do not deploy these deliberately risky patterns.
+    2   function previewExample() {
+    3 &gt;   const text: string = new URLSearchParams(window.location.search).get(&quot;q&quot;) ?? &quot;&quot;;
+    4     const html = &quot;&lt;p&gt;&quot; + text + &quot;&lt;/p&gt;&quot;;
+    5     document.querySelector(&quot;#unsafe-preview&quot;)!.innerHTML = html;
+    6     window.open(text);</pre>
+<details><summary>查看数据流证据和建议</summary><pre>尚无完整数据流证据，请人工追踪。</pre><p>追踪输入来源与最终输出，核查对应上下文的校验和净化。</p><p>复核备注：无</p></details></article><article class="finding" data-priority="信息">
+<div class="meta"><span class="badge">信息优先级</span> XSS-L06 · CWE-79 · 待人工确认</div>
+<h2>外部输入 / 消息</h2><p class="location">browser.tsx:3:28</p>
+<p>语法信号</p><pre>    1   // Synthetic training fixture. Do not deploy these deliberately risky patterns.
+    2   function previewExample() {
+    3 &gt;   const text: string = new URLSearchParams(window.location.search).get(&quot;q&quot;) ?? &quot;&quot;;
+    4     const html = &quot;&lt;p&gt;&quot; + text + &quot;&lt;/p&gt;&quot;;
+    5     document.querySelector(&quot;#unsafe-preview&quot;)!.innerHTML = html;
+    6     window.open(text);</pre>
+<details><summary>查看数据流证据和建议</summary><pre>尚无完整数据流证据，请人工追踪。</pre><p>追踪输入来源与最终输出，核查对应上下文的校验和净化。</p><p>复核备注：无</p></details></article></main>
+<section><details><summary>范围与未读取 / AST 解析说明</summary><pre>{
+  &quot;import&quot;: {},
+  &quot;report_filters&quot;: {},
+  &quot;AI_scope&quot;: {}
+}</pre><pre>未记录 AST 解析错误。未支持语言仍仅执行规则搜索。</pre><pre>无跳过项</pre><p>单文件 1 MiB；最多 10000 文件 / 100 MiB / 10000 线索。不执行项目代码。</p></details></section>
+<footer>基于 songjianyang/xss-audit（MIT）。本报告可离线打开，无外部资源请求。</footer><script>
+const search=document.getElementById('search'), priority=document.getElementById('priority');
+function filter(){let count=0;document.querySelectorAll('.finding').forEach(item=>{const show=(!priority.value||item.dataset.priority===priority.value)&&item.textContent.toLowerCase().includes(search.value.toLowerCase());item.hidden=!show;if(show)count++;});document.getElementById('count').textContent='显示 '+count+' 条';}search.addEventListener('input',filter);priority.addEventListener('change',filter);filter();
+</script></body></html>

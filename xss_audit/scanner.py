@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import bisect
+import hashlib
 import json
 import os
 import re
@@ -11,12 +12,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from .analysis import analyze
+from .secrets import redact, secret_locations
+
 LAYERS = {
     1: "DOM / HTML 注入", 2: "属性与事件处理器", 3: "URL 与导航",
     4: "配置与脚本内 JSON", 5: "Props 展开与组件", 6: "不可信数据源与消息",
     7: "原型污染链", 8: "JavaScript 执行", 9: "CSS 与样式",
     10: "SVG / MathML / XML", 11: "Markdown 与净化器", 12: "框架渲染与信任绕过",
     13: "Trusted Types 与 CSP", 14: "框架绑定与模板编译",
+    15: "SQL 查询构造", 16: "Shell 命令执行", 17: "文件路径与遍历",
+    18: "服务端请求 / SSRF", 19: "不安全反序列化", 20: "疑似硬编码凭据",
 }
 
 # Broad review signals deliberately include safe uses. No source-to-sink claim is made.
@@ -38,13 +44,20 @@ RULES = [
     (14, "绑定 / 模板解释", r"\b(?:data-bind|data-win-bind|data-win-control|ng-bind-html|ng-bind-html-unsafe|x-html|x-data|x-init)\b|\bx-(?:on|bind):|\bko\s*\.\s*(?:applyBindings\w*|bindingHandlers)|\bWinJS\s*\.|\$compile\s*\(|\$sce\s*\.|\b(?:SafeString|htmlSafe|controlsDescendantBindings|parseBindingsString)\b|\{\{\{"),
 ]
 COMPILED = [(layer, title, re.compile(pattern, re.I)) for layer, title, pattern in RULES]
-EXTENSIONS = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".html", ".htm", ".vue", ".svelte", ".astro", ".mdx", ".css", ".scss", ".svg", ".xml", ".json", ".hbs", ".handlebars", ".ejs", ".njk"}
+EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".html", ".htm", ".vue", ".svelte", ".astro", ".mdx", ".css", ".scss", ".svg", ".xml", ".json", ".hbs", ".handlebars", ".ejs", ".njk"}
 EXCLUDED_DIRS = {".git", "node_modules", "vendor", "dist", "build", "coverage", ".next", ".nuxt", ".venv", "venv", "__pycache__", ".idea", ".vscode"}
 MAX_FILE_BYTES = 1024 * 1024
 MAX_TOTAL_BYTES = 100 * 1024 * 1024
 MAX_FILES = 10000
 MAX_MATCHES = 10000
 AI_CHAR_BUDGET = 180000
+
+
+def is_link(path: Path) -> bool:
+    try:
+        return path.is_symlink() or bool(getattr(path.lstat(), "st_file_attributes", 0) & 0x400)
+    except OSError:
+        return True
 
 
 @dataclass
@@ -56,6 +69,15 @@ class Match:
     rule: str
     snippet: str
     status: str = "待人工确认"
+    rule_id: str = ""
+    priority: str = "信息"
+    confidence: str = "语法信号"
+    cwe: str = ""
+    evidence: list[str] = field(default_factory=list)
+    recommendation: str = "追踪输入来源与最终输出，核查对应上下文的校验和净化。"
+    context: str = ""
+    fingerprint: str = ""
+    note: str = ""
 
 
 @dataclass
@@ -72,12 +94,21 @@ class ScanResult:
     ai_metadata: dict = field(default_factory=dict)
     sources: list[dict] = field(default_factory=list, repr=False)
     ai_omitted: list[str] = field(default_factory=list)
+    analysis_notes: list[dict] = field(default_factory=list)
+    languages: dict = field(default_factory=dict)
+    import_metadata: dict = field(default_factory=dict)
+    report_filters: dict = field(default_factory=dict)
+
+    @property
+    def ast_incomplete(self):
+        return any(note.get("path") != "本机复核记录" for note in self.analysis_notes)
 
     def to_dict(self) -> dict:
         data = asdict(self)
         data.pop("sources")  # Never dump entire source files into JSON reports.
+        data["ast_incomplete"] = self.ast_incomplete
         data["layers"] = {str(k): {"name": v, "matches": sum(m.layer == k for m in self.matches)} for k, v in LAYERS.items()}
-        data["limitations"] = "启发式匹配，不进行完整数据流分析；零匹配不代表安全。AI 结论也需要人工复核。"
+        data["limitations"] = "规则搜索 + 有限 AST 数据流线索；不进行完整跨文件分析。优先级是复核顺序，不是已确认漏洞等级。零匹配不代表安全。"
         data["excluded_directories"] = sorted(EXCLUDED_DIRS)
         return data
 
@@ -88,7 +119,6 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
     if not base.is_dir():
         raise ValueError("请选择代码文件夹。")
     result = ScanResult(str(base))
-    ai_chars = 0
 
     def skip(path: str, reason: str) -> None:
         result.skipped.append({"path": path, "reason": reason})
@@ -100,7 +130,7 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
         allowed = []
         for name in sorted(dirs):
             child = Path(directory) / name
-            if name.lower() in EXCLUDED_DIRS or child.is_symlink() or getattr(child, "is_junction", lambda: False)():
+            if name.lower() in EXCLUDED_DIRS or is_link(child):
                 skip(child.relative_to(base).as_posix() + "/", "依赖 / 生成目录 / 链接目录")
             else:
                 allowed.append(name)
@@ -119,7 +149,7 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
                 result.truncated = True
                 return result
             try:
-                if path.is_symlink() or not path.resolve().is_relative_to(base):
+                if is_link(path) or not path.resolve().is_relative_to(base):
                     skip(rel, "符号链接 / 范围外文件")
                     continue
                 with path.open("rb") as stream:
@@ -142,15 +172,34 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
             result.bytes_scanned += len(raw)
             if progress:
                 progress(rel)
-            if collect_source:
-                # Complete files only: never imply that a truncated file was reviewed.
-                if ai_chars + len(content) + len(rel) + 100 <= AI_CHAR_BUDGET:
-                    result.sources.append({"path": rel, "content": content})
-                    ai_chars += len(content) + len(rel) + 100
-                else:
-                    result.ai_omitted.append(rel)
+            suffix = path.suffix.lower()
+            result.languages[suffix] = result.languages.get(suffix, 0) + 1
             starts = [0] + [m.end() for m in re.finditer("\n", content)]
             lines = content.splitlines()
+            file_matches = []
+            def add(item):
+                neighborhood = "\n".join(line.strip() for line in lines[max(0, item.line - 3):item.line + 2])
+                item.fingerprint = hashlib.sha256((rel + "\0" + item.rule_id + "\0" + neighborhood).encode()).hexdigest()[:32]
+                item.snippet = redact(item.snippet)
+                item.context = redact("\n".join(f"{i + 1:>5} {'>' if i + 1 == item.line else ' '} {lines[i]}" for i in range(max(0, item.line - 4), min(len(lines), item.line + 3))))[:4000]
+                item.evidence = [redact(value) for value in item.evidence]
+                result.matches.append(item)
+                file_matches.append(item)
+
+            found, notes = analyze(content, suffix)
+            result.analysis_notes.extend({"path": rel, "reason": note} for note in notes)
+            for evidence in found:
+                if len(result.matches) >= MAX_MATCHES:
+                    break
+                add(Match(path=rel, **evidence))
+            for start, end in secret_locations(content):
+                if len(result.matches) >= MAX_MATCHES:
+                    break
+                line = bisect.bisect_right(starts, start)
+                add(Match(rel, line, start - starts[line - 1] + 1, 20, "疑似硬编码凭据", lines[line - 1].strip()[:300],
+                    rule_id="SECRET-LITERAL", priority="中", confidence="凭据格式 / 命名信号", cwe="CWE-798",
+                    evidence=["命中凭据格式或敏感变量名；无法判断是否为真实有效凭据。显示与 AI 发送时遮蔽识别出的值。"],
+                    recommendation="若为有效凭据，请撤销 / 轮换并使用环境变量或秘密存储；仅删除源码不足以撤销已泄露值。"))
             for layer, title, regex in COMPILED:
                 seen = set()
                 for match in regex.finditer(content):
@@ -158,12 +207,31 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
                     if line_index in seen:
                         continue
                     seen.add(line_index)
-                    snippet = lines[line_index].strip()[:300] if line_index < len(lines) else ""
-                    result.matches.append(Match(rel, line_index + 1, match.start() - starts[line_index] + 1, layer, title, snippet))
                     if len(result.matches) >= MAX_MATCHES:
                         result.truncated = True
                         skip(rel, "达到 10000 条匹配上限；当前文件和后续文件不完整")
                         return result
+                    snippet = lines[line_index].strip()[:300] if line_index < len(lines) else ""
+                    if not any(m.line == line_index + 1 and m.layer == layer and m.confidence.startswith("AST") for m in file_matches):
+                        priority = "中" if layer in {1, 8, 12, 14} else "信息"
+                        add(Match(rel, line_index + 1, match.start() - starts[line_index] + 1, layer, title, snippet,
+                                  rule_id=f"XSS-L{layer:02d}", priority=priority, cwe="CWE-79" if layer != 7 else "CWE-1321"))
+            if collect_source:
+                rank = 0 if any(m.priority == "高" for m in file_matches) else 1 if file_matches else 2
+                candidates = [*result.sources, {"path": rel, "content": content, "_rank": rank}]
+                result.sources = []
+                used = 0
+                for candidate in sorted(candidates, key=lambda c: (c.get("_rank", 2), c["path"])):
+                    size = len(candidate["content"]) + len(candidate["path"]) + 100
+                    if used + size <= AI_CHAR_BUDGET:
+                        result.sources.append(candidate)
+                        used += size
+                    elif candidate["path"] not in result.ai_omitted:
+                        result.ai_omitted.append(candidate["path"])
+            if len(result.matches) >= MAX_MATCHES:
+                result.truncated = True
+                skip(rel, "达到匹配上限；后续范围未扫描")
+                return result
     return result
 
 
@@ -174,18 +242,26 @@ def fenced(text: str) -> str:
 
 
 def markdown(result: ScanResult) -> str:
-    status = "已取消，结果不完整" if result.cancelled else "达到上限，结果不完整" if result.truncated else "扫描完成"
+    status = "已取消，结果不完整" if result.cancelled else "达到上限，结果不完整" if result.truncated else "扫描完成，部分 AST 未完成" if result.ast_incomplete else "扫描完成"
     parts = ["# XSS Audit 报告", f"时间（UTC）：{result.created_at}", "扫描目录：", fenced(result.root),
              f"状态：{status}。扫描 {result.files_scanned} 个文件，{len(result.matches)} 条待人工确认线索。",
-             "启发式搜索不进行完整数据流分析。所有匹配均不是已确认漏洞；零匹配不代表安全。安全的调用、注释和字符串也可能匹配。AI 结果为未验证模型输出。",
-             "## 14 类规则覆盖", "| 类别 | 匹配数 |", "| --- | ---: |"]
+             "规则搜索与有限 AST 数据流分析不构成完整审计。优先级表示复核顺序，所有自动匹配均需人工确认；零匹配不代表安全。",
+             "## 规则类别覆盖", "| 类别 | 匹配数 |", "| --- | ---: |"]
     for layer, name in LAYERS.items():
         parts.append(f"| {layer}. {name} | {sum(m.layer == layer for m in result.matches)} |")
     parts.append("\n## 待人工确认")
     for index, match in enumerate(result.matches, 1):
         parts.extend([f"### {index}. 第 {match.layer} 类：{match.rule}",
+                      f"复核优先级：{match.priority}；状态：{match.status}；证据：{match.confidence}；{match.cwe}",
                       fenced(f"{match.path}:{match.line}:{match.column}"), fenced(match.snippet),
-                      "复核：追踪输入来源 → 数据流 → 最终输出位置；检查对应上下文的校验 / 净化、执行时机和可利用性。"])
+                      fenced("\n".join(match.evidence)) if match.evidence else "尚无完整数据流证据。",
+                      "建议：" + match.recommendation, "复核备注：" + (match.note or "无")])
+    if result.import_metadata:
+        parts.extend(["## 导入来源", fenced(json.dumps(result.import_metadata, ensure_ascii=False, indent=2))])
+    if result.report_filters:
+        parts.extend(["## 报告筛选条件", fenced(json.dumps(result.report_filters, ensure_ascii=False, indent=2))])
+    if result.analysis_notes:
+        parts.extend(["## AST 未完成 / 解析说明", fenced(json.dumps(result.analysis_notes, ensure_ascii=False, indent=2))])
     parts.extend(["## 排除与未读取", "默认排除目录：" + ", ".join(sorted(EXCLUDED_DIRS)),
                   "仅处理支持的文本扩展名；单文件上限 1 MiB、最多 10000 个文件 / 100 MiB / 10000 条匹配。读取 UTF-8；不跟随链接。不会执行项目文件。"])
     for item in result.skipped:
@@ -199,7 +275,13 @@ def markdown(result: ScanResult) -> str:
 
 def write_report(result: ScanResult, target: str | Path, fmt: str = "markdown", overwrite: bool = False) -> Path:
     path = Path(target).expanduser().resolve()
-    text = json.dumps(result.to_dict(), ensure_ascii=False, indent=2) if fmt == "json" else markdown(result)
+    if fmt in {"html", "sarif"}:
+        from .reports import html_report, sarif
+        text = html_report(result) if fmt == "html" else json.dumps(sarif(result), ensure_ascii=False, indent=2)
+    elif fmt in {"markdown", "json"}:
+        text = json.dumps(result.to_dict(), ensure_ascii=False, indent=2) if fmt == "json" else markdown(result)
+    else:
+        raise ValueError("不支持的报告格式。")
     with path.open("w" if overwrite else "x", encoding="utf-8", newline="\n") as stream:
         stream.write(text)
     return path

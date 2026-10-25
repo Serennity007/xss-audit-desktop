@@ -37,7 +37,7 @@ class AuditTests(unittest.TestCase):
                    "ko.applyBindings(vm)"]
         self.source("src/示例.tsx", "\n".join(signals))
         result = scan(self.root)
-        self.assertEqual({m.layer for m in result.matches}, set(LAYERS))
+        self.assertEqual({m.layer for m in result.matches}, set(range(1, 15)))
         self.assertTrue(all(m.status == "待人工确认" for m in result.matches))
         html = next(m for m in result.matches if m.layer == 1)
         self.assertEqual((html.path, html.line, html.column), ("src/示例.tsx", 1, 4))
@@ -126,6 +126,20 @@ class AuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             review(result, "key", "model", transport=lambda *a, **k: io.BytesIO(b'{"status":"incomplete"}'))
 
+    def test_ai_masks_source_values_before_network_request(self):
+        secret = "ghp_" + "B" * 36
+        self.source("config.json", json.dumps({"api_key": secret}))
+        result = scan(self.root, collect_source=True)
+        def transport(request, timeout):
+            self.assertNotIn(secret.encode(), request.data)
+            self.assertIn(b"[REDACTED]", request.data)
+            return io.BytesIO(b'{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"review"}]}]}')
+        review(result, "dummy-api-key", "mock-model", transport=transport)
+        self.assertEqual(result.ai_metadata["masked_values"], 1)
+        with self.assertRaises(ValueError) as caught:
+            review(result, "line-one\nline-two", "mock-model", transport=transport)
+        self.assertNotIn("line-one", str(caught.exception))
+
     def test_ai_errors_do_not_echo_response_or_key(self):
         self.source("app.js", "eval(input)")
         result = scan(self.root, collect_source=True)
@@ -184,6 +198,19 @@ class AuditTests(unittest.TestCase):
             second = self.root / "ai.md"
             self.assertEqual(main([str(self.root), "--ai", "-o", str(second)]), 2)
         self.assertIn("AI 辅助审计", second.read_text(encoding="utf-8"))
+
+    def test_cli_incomplete_ast_and_priority_filter_are_explicit(self):
+        broken = self.source("broken.py", "def broken(:")
+        output = self.root / "incomplete.json"
+        self.assertEqual(main([str(self.root), "--format", "json", "-o", str(output)]), 2)
+        self.assertTrue(json.loads(output.read_text(encoding="utf-8"))["ast_incomplete"])
+        broken.unlink()
+        self.source("app.js", "const q=location.hash; el.innerHTML=q;")
+        filtered = self.root / "filtered.json"
+        self.assertEqual(main([str(self.root), "--format", "json", "--min-priority", "高", "--fail-on-match", "-o", str(filtered)]), 1)
+        data = json.loads(filtered.read_text(encoding="utf-8"))
+        self.assertTrue(all(item["priority"] == "高" for item in data["matches"]))
+        self.assertEqual(data["report_filters"]["min_priority"], "高")
 
 
 if __name__ == "__main__":
