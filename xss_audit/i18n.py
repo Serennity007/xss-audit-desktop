@@ -5,6 +5,21 @@ import re
 
 LANGUAGES = ("en", "zh-CN")
 EN = {
+    "全部状态": "All statuses",
+    "项目配置": "Project configuration", "覆盖缺口": "Coverage gaps", "文件分析状态": "File analysis status",
+    "本地复核历史格式错误。": "Invalid local review history format.",
+    "复核记录正在由其他窗口更新，请稍后重试。": "Another window is updating the review records. Try again shortly.",
+    "扫描完成，部分源码未读取": "Scan finished; some source files were not read",
+    "复核标记已保存；源文件变化后需重新复核，其他快照的记录会保留。": "Review saved. Source-file changes require another review; records from other snapshots are retained.",
+    "项目 TOML 配置路径；默认读取项目内 .xss-audit.toml": "Project TOML configuration; defaults to .xss-audit.toml inside the project",
+    "允许不完整扫描不触发退出码 2；报告仍记录覆盖缺口": "Allow incomplete scans without exit code 2; coverage gaps remain in reports",
+    "不能同时指定配置对象和配置文件。": "Specify a configuration object or a configuration file, not both.",
+    "项目配置排除": "Excluded by project configuration", "审计报告产物": "Generated audit report",
+    "文件超过读取预算": "File exceeds the read budget", "目录无法读取": "Directory could not be read",
+    "未读取到支持的源文件": "No supported source files were read",
+    "达到匹配预算；当前文件和后续文件不完整": "Match budget reached; this file and subsequent files are incomplete",
+    "## 项目配置与文件覆盖": "## Project configuration and file coverage",
+    "仅处理支持的 UTF-8 文本；读取与匹配预算见项目配置。不跟随链接，不执行项目文件。": "Supported UTF-8 text only; read and match budgets are recorded in project configuration. Links are not followed and project files are never executed.",
     "界面和报告语言（默认英语）": "Interface and report language (default: English)",
     "高": "High", "中": "Medium", "信息": "Info", "待人工确认": "Needs review",
     "确认风险": "Confirmed risk", "误报": "False positive", "已修复": "Fixed", "无": "None",

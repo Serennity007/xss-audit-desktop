@@ -4,6 +4,14 @@ Release dates below use Asia/Shanghai. Downloadable binaries remain versioned se
 
 ## Unreleased
 
+- Add shared `.xss-audit.toml` scan scope, include/exclude globs and resource budgets, with CLI `--config` and `--allow-partial` controls.
+- Record per-file analysis depth and coverage failures in desktop and exported reports. Strict CLI scans return 2 for unreadable/oversized supported source and projects without readable source.
+- Recognize generated JSON/HTML audit reports so repeated scans do not report their own output as application code.
+- Keep review decisions across snapshots and independent windows; separate duplicate finding instances and invalidate decisions when source-file evidence changes. Preserve unambiguous legacy review records.
+- Add a desktop review-status filter.
+- Extend HTML flow evidence to `srcdoc` and direct jQuery HTML setters; resolve static Python import aliases and analyze `with` / `async with` context expressions. Locally overridden sanitizer names no longer suppress HTML evidence.
+- Add focused regressions for scan configuration, repeated exports, coverage policy, review history and the added analyzer models. See [scan configuration](docs/SCAN-CONFIG.en.md) / [扫描配置](docs/SCAN-CONFIG.zh-CN.md).
+
 - Refresh the English-default README and Chinese edition with a product banner, download links, a source example and task-oriented navigation.
 - Retain detailed usage in separate English and Chinese guides.
 - Add contribution and security-reporting policies, structured issue forms, a pull-request checklist and a documentation index.

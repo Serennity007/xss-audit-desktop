@@ -1,0 +1,9 @@
+# Copy to .xss-audit.toml in the project being reviewed.
+[scan]
+include = []
+exclude = ["reports/**"]
+max_file_bytes = 1048576
+max_total_bytes = 104857600
+max_files = 10000
+max_matches = 10000
+strict = true

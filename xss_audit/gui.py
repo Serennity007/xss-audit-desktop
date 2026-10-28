@@ -130,6 +130,10 @@ class AuditApp:
         combo = ttk.Combobox(toolbar, textvariable=self.category, values=categories, state="readonly", width=22)
         combo.pack(side="left")
         combo.bind("<<ComboboxSelected>>", lambda _: self.refresh())
+        self.status_filter = self.ui_var("全部状态")
+        status_filter = ttk.Combobox(toolbar, textvariable=self.status_filter, values=["全部状态", *STATUSES], state="readonly", width=12)
+        status_filter.pack(side="left", padx=(8, 0))
+        status_filter.bind("<<ComboboxSelected>>", lambda _: self.refresh())
         self.priority = self.ui_var("全部优先级")
         priority = ttk.Combobox(toolbar, textvariable=self.priority, values=["全部优先级", "高", "中", "信息"], state="readonly", width=11)
         priority.pack(side="left", padx=8)
@@ -323,7 +327,7 @@ class AuditApp:
         try:
             self.store.save_review(self.result)
             self.refresh()
-            self.status.set("复核标记已保存；相同路径 / 规则 / 代码的线索将在下次扫描时恢复状态。")
+            self.status.set("复核标记已保存；源文件变化后需重新复核，其他快照的记录会保留。")
         except (OSError, ValueError) as error:
             item.status, item.note = old
             self.error("保存失败", str(error))
@@ -428,7 +432,9 @@ class AuditApp:
         notes = lambda rows: [{"path": row["path"], "reason": self.tr(row["reason"])} for row in rows]
         scope = {self.tr("扫描目录"): value.root, self.tr("导入来源"): localized_metadata(value.import_metadata, self.language),
                  self.tr("语言统计"): value.languages, self.tr("AST 说明"): notes(value.analysis_notes),
-                 self.tr("跳过项"): notes(value.skipped), self.tr("类别"): {self.tr(name): sum(m.layer == n for m in value.matches) for n, name in LAYERS.items()}}
+                  self.tr("跳过项"): notes(value.skipped), self.tr("项目配置"): value.scan_config,
+                  self.tr("覆盖缺口"): notes(value.coverage_errors), self.tr("文件分析状态"): value.file_coverage,
+                  self.tr("类别"): {self.tr(name): sum(m.layer == n for m in value.matches) for n, name in LAYERS.items()}}
         self.set_text(self.scope_text, json.dumps(scope, ensure_ascii=False, indent=2))
 
     def poll(self):
@@ -450,7 +456,7 @@ class AuditApp:
                     self.refresh()
                     self.set_busy(False)
                     self.show_scope()
-                    state = "已取消，结果不完整" if value.cancelled else "达到上限，结果不完整" if value.truncated else "完成，部分 AST 未完成" if value.ast_incomplete else "完成"
+                    state = "已取消，结果不完整" if value.cancelled else "达到上限，结果不完整" if value.truncated else "完成，部分 AST 未完成" if value.ast_incomplete else "扫描完成，部分源码未读取" if value.coverage_errors else "完成"
                     self.status.set(f"{state} · {value.files_scanned} 个文件 · {len(value.matches)} 条待确认线索 · {len(value.skipped)} 项未读取 / 排除")
                 elif kind == "ai":
                     self.set_busy(False)
@@ -481,10 +487,15 @@ class AuditApp:
         ordered = sorted(enumerate(self.result.matches), key=lambda pair: ({"高": 0, "中": 1, "信息": 2}[pair[1].priority], pair[1].path, pair[1].line))
         for index, match in ordered:
             haystack = " ".join((match.path, match.rule, self.tr(match.rule), match.snippet, match.cwe, match.status, self.tr(match.status), match.note)).lower()
-            if (layer is None or match.layer == layer) and (priority == "全部优先级" or match.priority == priority) and (not search or search in haystack):
+            if (layer is None or match.layer == layer) and (priority == "全部优先级" or match.priority == priority) and (self.status_filter.get() == "全部状态" or match.status == self.status_filter.get()) and (not search or search in haystack):
                 self.tree.insert("", "end", iid=str(index), values=(self.tr(match.priority), self.tr(match.rule), match.path, match.line, self.tr(match.status)))
         if selected_rows and self.tree.exists(selected_rows[0]):
             self.tree.selection_set(selected_rows[0])
+        else:
+            self.review_button.configure(state="disabled")
+            self.review_status.set(STATUSES[0])
+            self.review_note.set("")
+            self.set_text(self.detail, "扫描完成后选择一条线索查看代码位置。所有规则匹配均需人工复核。")
 
     def show_match(self, _=None):
         selected = self.tree.selection()
