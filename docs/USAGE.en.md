@@ -73,7 +73,7 @@ python -m xss_audit "D:\projects\web-app" --baseline baseline.json --only-new --
 
 Exit 1 means new signals remain after priority/review filters; incomplete scans still return 2. Comparison counts describe the full scan before report filters. Filtered, cancelled, truncated and incomplete-AST JSON reports cannot be used as baselines. Baseline files are limited to 64 MiB.
 
-Identities use path, rule and nearby-code fingerprints, including multiplicity. Moving a file or editing nearby code can produce a new identity. No longer observed does not mean fixed: scope changes, skipped/unread files and engine changes can also remove a match. Choose the same project and comparable engine/scope. Review decisions are not changed. An unfiltered compared report can become the next baseline; a new-only report cannot. This feature is not in the published v0.3.0 EXEs.
+Identities use path, rule, finding fingerprint and full source-file digest, including multiplicity. File changes require fresh review even if the sink text stays identical. Legacy reports without digests may show all signals as new after upgrading. No longer observed does not mean fixed: scope changes, skipped/unread files and engine changes can also remove a match. Choose the same project and comparable engine/scope; scope differences are recorded. Review decisions are not changed. An unfiltered compared report can become the next baseline; a new-only report cannot. This feature is not in the published v0.3.0 EXEs.
 
 ## Optional AI review
 

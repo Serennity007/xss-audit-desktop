@@ -12,6 +12,7 @@ from urllib.error import HTTPError
 from xss_audit.ai import NoRedirects, review, validate_endpoint
 from xss_audit.cli import main
 from xss_audit.scanner import LAYERS, MAX_FILE_BYTES, markdown, scan, write_report
+from xss_audit.config import ScanConfig
 
 
 class AuditTests(unittest.TestCase):
@@ -63,8 +64,7 @@ class AuditTests(unittest.TestCase):
         event = threading.Event()
         event.set()
         self.assertTrue(scan(self.root, cancel=event).cancelled)
-        with patch("xss_audit.scanner.MAX_MATCHES", 1):
-            result = scan(self.root)
+        result = scan(self.root, config=ScanConfig(max_matches=1))
         self.assertTrue(result.truncated)
         self.assertIn("不完整", markdown(result, "zh-CN"))
         self.assertIn("incomplete", markdown(result, "en"))

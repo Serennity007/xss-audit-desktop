@@ -4,6 +4,7 @@ import argparse
 import os
 import sys
 from datetime import datetime
+from dataclasses import replace
 
 from . import __version__
 from .ai import DEFAULT_BASE_URL, review
@@ -12,6 +13,7 @@ from .importer import import_github
 from .state import StateStore
 from .baseline import load_baseline, compare
 from .i18n import LANGUAGES, normalize, tr
+from .config import load_config
 
 
 def main(argv=None) -> int:
@@ -51,6 +53,8 @@ def main(argv=None) -> int:
     parser.add_argument("--base-url", default=os.environ.get("OPENAI_BASE_URL", DEFAULT_BASE_URL))
     parser.add_argument("--api-format", choices=["responses", "chat"], default="responses")
     parser.add_argument("--fail-on-match", action="store_true", help="有待确认线索时返回 1；默认完成时返回 0")
+    parser.add_argument("--config", help="项目 TOML 配置路径；默认读取项目内 .xss-audit.toml")
+    parser.add_argument("--allow-partial", action="store_true", help="允许不完整扫描不触发退出码 2；报告仍记录覆盖缺口")
     args = parser.parse_args(argv)
     args.min_priority = {"high": "高", "medium": "中", "info": "信息"}.get(args.min_priority, args.min_priority)
     if bool(args.path) == bool(args.repo):
@@ -67,7 +71,10 @@ def main(argv=None) -> int:
         path = args.path
         if args.repo:
             path, metadata = import_github(args.repo, args.ref, args.destination, progress=lambda text: print(t(text), file=sys.stderr))
-        result = scan(path, collect_source=args.ai)
+        config = load_config(path, args.config)
+        if args.allow_partial:
+            config = replace(config, strict=False)
+        result = scan(path, collect_source=args.ai, config=config)
         result.language = language
         result.import_metadata = metadata
         if not args.no_saved_review:
@@ -97,7 +104,7 @@ def main(argv=None) -> int:
         if ai_error:
             print(t(f"AI 失败，本地报告已保留：{ai_error}"), file=sys.stderr)
             return 2
-        if result.truncated or result.cancelled or result.ast_incomplete:
+        if result.incomplete and config.strict:
             print(t("扫描不完整，请缩小范围。"), file=sys.stderr)
             return 2
         return 1 if args.fail_on_match and result.matches else 0

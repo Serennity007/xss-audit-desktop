@@ -7,6 +7,18 @@ Release dates below use Asia/Shanghai. Downloadable binaries remain versioned se
 - Add a browser-local bilingual JS/TS/JSX/TSX workbench in web/, with bounded Babel AST evidence, pattern review, disposable analysis Workers, file editing/import, persisted review decisions and three offline report formats. Includes static build and WorkBuddy deployment handoff; no public deployment is claimed.
 
 - Add desktop baseline comparison and a new-signals view, CLI --baseline / --only-new, and comparison metadata in JSON, Markdown, HTML and SARIF. Missing signals are not classified as fixed; incomplete and filtered baselines are rejected. Available from source; not included in v0.3.0 binaries.
+- Add a repository-auditor robustness research platform: unchanged-source baseline/context pairs, external oracle labels, fixed anchoring/authority/instruction templates and equal-character neutral controls.
+- Add a bounded read-only multi-file agent with literal search, strict JSON actions, exposed-line evidence checks, redacted visible transcripts and explicit budget/error outcomes.
+- Add `xss-audit-research` / `python -m xss_audit.research_cli` preparation, repeated balanced trials, conditional detection/localization/evidence regression metrics, source/context inventory verification and offline HTML/JSON reports.
+- Keep scripted offline demonstrations separate from live model results. Document methodological limits and verified references in [English](docs/ROBUSTNESS.en.md) / [中文](docs/ROBUSTNESS.zh-CN.md). No real-model robustness claim is made by these changes.
+
+- Add shared `.xss-audit.toml` scan scope, include/exclude globs and resource budgets, with CLI `--config` and `--allow-partial` controls.
+- Record per-file analysis depth and coverage failures in desktop and exported reports. Strict CLI scans return 2 for unreadable/oversized supported source and projects without readable source.
+- Recognize generated JSON/HTML audit reports so repeated scans do not report their own output as application code.
+- Keep review decisions across snapshots and independent windows; separate duplicate finding instances and invalidate decisions when source-file evidence changes. Preserve unambiguous legacy review records.
+- Add a desktop review-status filter.
+- Extend HTML flow evidence to `srcdoc` and direct jQuery HTML setters; resolve static Python import aliases and analyze `with` / `async with` context expressions. Locally overridden sanitizer names no longer suppress HTML evidence.
+- Add focused regressions for scan configuration, repeated exports, coverage policy, review history and the added analyzer models. See [scan configuration](docs/SCAN-CONFIG.en.md) / [扫描配置](docs/SCAN-CONFIG.zh-CN.md).
 
 - Refresh the English-default README and Chinese edition with a product banner, download links, a source example and task-oriented navigation.
 - Retain detailed usage in separate English and Chinese guides.

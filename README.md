@@ -16,6 +16,9 @@
 New browser workbench: [web/](web/README.md) adds browser-local JS/TS/JSX/TSX analysis, evidence inspection, local review records and JSON/Markdown/offline HTML exports. Build it as a static site; its coverage differs from the desktop engine. [WorkBuddy handoff](web/WORKBUDDY.md). No public web deployment is claimed yet.
 
 Source-only update: desktop and CLI baseline comparison now distinguishes new, unchanged and no-longer-observed review signals. See the [usage guide](docs/USAGE.en.md#compare-scans-unreleased-source-feature). This is not included in the published v0.3.0 binaries. Planned extensions and acceptance conditions are in the [roadmap](docs/ROADMAP.md).
+The development version on `main` adds project scan settings, per-file coverage, retained review history, status filtering and additional HTML/Python flow models. See [scan configuration and behavior changes](docs/SCAN-CONFIG.en.md). The v0.3.0 downloads below remain the previously published binaries.
+
+The source also includes a [repository-auditor robustness research platform](docs/ROBUSTNESS.en.md): unchanged-source context pairs, bounded multi-file audit transcripts and separate detection, localization and evidence regression proxies. Run `python -m xss_audit.research_cli demo --output D:\audit-research\demo --offline-demo` for a scripted synthetic demonstration; it is not measured model performance.
 
 **Review source code with the context, flow evidence and review decisions in one workbench.**
 

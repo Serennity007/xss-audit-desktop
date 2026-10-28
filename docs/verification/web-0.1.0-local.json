@@ -1,0 +1,26 @@
+{
+  "observed_date": "2026-10-29",
+  "timezone": "Asia/Shanghai",
+  "web_version": "0.1.0",
+  "node": "24.18.0",
+  "web_tests": {"run": 14, "passed": 14, "failed": 0},
+  "integrated_python_tests": {"run": 148, "passed": 145, "failed": 0, "skipped": 3, "skip_reason": "Windows symlink creation permission unavailable"},
+  "integrated_origin_main": "3eb490860cce634a63f07259dfd6fe477a344345",
+  "build": "npm run build: success",
+  "browser_checks": [
+    "synthetic sample: 2 files, 6 review signals, 3 high-priority signals",
+    "code line selection and source/assignment/sink evidence",
+    "manual review save, language switch and restoration after reload/reimport",
+    "single-signal clipboard copy",
+    "actual JSON, Markdown and HTML downloads",
+    "syntax failure: partial analysis plus coverage note",
+    "source edit clears stale findings and disables export",
+    "textContent safe control: zero signals",
+    "two UTF-8 files imported through the real browser file chooser",
+    "390px and 1366px viewport checks: no document horizontal overflow",
+    "no browser console warnings or errors observed in final flow"
+  ],
+  "cancellation_verification": "Automated Worker lifecycle tests verify cancellation, timeout and late-message rejection. The attempted UI cancel on a fast sample completed before the click; it is not recorded as a successful UI cancel test.",
+  "not_verified": ["public WorkBuddy deployment", "signed-out public access", "live AI integration", "detection accuracy benchmark", "all browser engines"],
+  "notice": "Local engineering verification only; not a vulnerability detection quality or research novelty result."
+}

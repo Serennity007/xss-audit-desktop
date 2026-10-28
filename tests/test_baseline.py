@@ -53,7 +53,7 @@ class BaselineTests(unittest.TestCase):
 
     def test_reject_incomplete_and_filtered_baselines(self):
         original = json.loads(self.baseline.read_text(encoding="utf-8"))
-        for key in ("cancelled", "truncated", "ast_incomplete"):
+        for key in ("cancelled", "truncated", "ast_incomplete", "incomplete", "coverage_errors"):
             data = copy.deepcopy(original)
             data[key] = True
             self.baseline.write_text(json.dumps(data), encoding="utf-8")
@@ -65,6 +65,16 @@ class BaselineTests(unittest.TestCase):
             self.baseline.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_baseline(self.baseline)
+
+    def test_source_change_and_legacy_reports_require_new_review(self):
+        data = load_baseline(self.baseline)
+        (self.code / "old.js").write_text("const q=location.hash;\nel.innerHTML=q;\n// source changed", encoding="utf-8")
+        fresh = scan(self.code)
+        self.assertEqual(fresh.matches[0].fingerprint, self.old.matches[0].fingerprint)
+        self.assertEqual(compare(fresh, data)["unchanged"], 0)
+        for row in data["matches"]:
+            row.pop("evidence_hash", None)
+        self.assertTrue(compare(fresh, data)["baseline_legacy"])
 
     def test_malformed_and_oversized_input(self):
         original = json.loads(self.baseline.read_text(encoding="utf-8"))

@@ -4,6 +4,8 @@ This is a development sequence, not a claim that the listed capabilities exist. 
 
 ## Delivered in local source, unreleased
 
+Integrated upstream development commits f495a3a, 011f642 and 3eb4908: scan configuration, per-file coverage, review history/status filtering, HTML/Python analysis improvements and a paired repository-auditor robustness research harness. These remain source features, not new published Windows binaries or measured live-model research results.
+
 The browser workbench is now implemented in web/: static build, JS/TS/JSX/TSX AST and pattern review, sample and multifile input, local review records, Chinese/English UI and JSON/Markdown/HTML exports. Browser and desktop coverage differ. Public WorkBuddy deployment remains pending; see web/README.md and web/WORKBUDDY.md.
 
 Baseline comparison is available in the desktop and CLI. Export a full JSON report, scan a comparable project snapshot, then compare. Reports preserve new/unchanged identities and locations no longer observed. The desktop has a new-signals view; CLI supports baseline-aware matching gates. Missing signals never automatically become fixed. Identity is based on path, rule and nearby code, not semantic equivalence. See the English and Chinese usage guides for limits.
@@ -13,13 +15,13 @@ Baseline comparison is available in the desktop and CLI. Export a full JSON repo
 | Order | User outcome | Required proof |
 | --- | --- | --- |
 | 1 | Experience a browser workbench without installation | Synthetic sample and user files use the same real analyzer; review and offline exports work anonymously; mobile and keyboard flows pass; source processing/storage is disclosed. |
-| 2 | Choose project scope explicitly | Include/exclude configuration and ignore patterns have predictable precedence; effective scope and unread files appear in every report; exclusions cannot silently claim completeness. |
+| 2 | Extend the existing project scope controls | Existing TOML include/exclude configuration and budgets are integrated. Any further ignore-file support must have predictable precedence and report effective scope. |
 | 3 | Review embedded framework scripts | Vue/Svelte component script blocks retain original coordinates, per-block parse failures and clear separation from template pattern matches. |
 | 4 | Trace selected cross-file paths | Resolve a declared subset of imports and function calls with explicit budgets; distinguish unsupported/dynamic paths; validate positive and negative cases without claiming full repository analysis. |
 | 5 | Compare branches and PRs | Record exact base/head revisions; preserve evidence outside edited lines where relevant; explicitly identify new signals without equating disappearance to a fix. |
 | 6 | Check dependency advisories | Cover declared lockfile ecosystems and resolved versions; show source/date, affected range, unavailable lookups and limits; do not infer reachability from an advisory alone. |
 | 7 | Review proposed fixes | Generate a reviewable patch with evidence and limitations; verify unchanged intent and relevant regressions; no unattended application or execution of imported projects. |
-| 8 | Evaluate an audit agent | Record observable search/read/tool actions; use independent labels, vulnerability/fix controls and repeated budget-matched runs; separate retrieval failures, evidence errors and detection outcomes. |
+| 8 | Extend the integrated audit-agent research harness | The paired-trial runner and observable traces exist. Next validate independent real-world cases and live-model runs, with budget-matched controls and separate detection/evidence outcomes. |
 | 9 | Share reviews across users | Define authentication, project permissions, data retention/deletion and audit history before hosting private code or adding persistent team storage. |
 | 10 | Improve distribution | Build and test each claimed OS/architecture; provide checksums and license notices; enable real CI with the required credential scope, then document actual results. |
 
@@ -35,7 +37,7 @@ Baseline comparison is available in the desktop and CLI. Export a full JSON repo
 
 本文件是开发顺序，不代表所有功能已实现。公开二进制仍为 v0.3.0。
 
-这一轮本地源码已补齐桌面、CLI 和四种报告的基线对比。仅按路径、规则及附近代码身份比较，不证明语义等价，不把未再观察到的线索当成已修复。
+本地源码已补齐桌面、CLI 和四种报告的基线对比，并合入远端的项目配置、覆盖说明、复核历史和仓库审计鲁棒性评测工具。基线按路径、规则、线索身份和源文件摘要比较，不证明语义等价，不把未再观察到的线索当成已修复。网页核心流程已实现，公开发布待完成；科研工具未据此宣称真实模型性能或论文创新。
 
 后续按完整用户流程推进：
 

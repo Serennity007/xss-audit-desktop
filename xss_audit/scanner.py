@@ -15,6 +15,7 @@ from typing import Callable
 from .analysis import analyze
 from .secrets import redact, secret_locations
 from .i18n import normalize, tr
+from .config import ScanConfig, load_config
 
 LAYERS = {
     1: "DOM / HTML 注入", 2: "属性与事件处理器", 3: "URL 与导航",
@@ -52,6 +53,18 @@ MAX_TOTAL_BYTES = 100 * 1024 * 1024
 MAX_FILES = 10000
 MAX_MATCHES = 10000
 AI_CHAR_BUDGET = 180000
+REPORT_KIND = "xss-audit-desktop/report-v1"
+
+
+def is_generated_report(content: str, suffix: str) -> bool:
+    """Recognize the reserved export header, never a marker in a code string.
+
+    Exporters put the marker first so a bounded header probe also recognizes
+    reports larger than the configured source-file budget.
+    """
+    if suffix in {".html", ".htm"}:
+        return bool(re.match(r'\A\s*<!doctype html><html lang="(?:en|zh-CN)"><head><meta charset="utf-8"><meta name="generator" content="XSS Audit Desktop">', content))
+    return suffix == ".json" and bool(re.match(r'\A\s*\{\s*"report_kind"\s*:\s*"' + re.escape(REPORT_KIND) + r'"\s*,', content))
 
 
 def is_link(path: Path) -> bool:
@@ -80,6 +93,8 @@ class Match:
     fingerprint: str = ""
     note: str = ""
     baseline_state: str = ""
+    legacy_fingerprint: str = ""
+    evidence_hash: str = ""
 
 
 @dataclass
@@ -102,15 +117,23 @@ class ScanResult:
     import_metadata: dict = field(default_factory=dict)
     report_filters: dict = field(default_factory=dict)
     baseline: dict = field(default_factory=dict)
+    scan_config: dict = field(default_factory=dict)
+    coverage_errors: list[dict] = field(default_factory=list)
+    file_coverage: list[dict] = field(default_factory=list)
 
     @property
     def ast_incomplete(self):
         return any(note.get("path") != "本机复核记录" for note in self.analysis_notes)
 
+    @property
+    def incomplete(self):
+        return self.cancelled or self.truncated or self.ast_incomplete or bool(self.coverage_errors)
+
     def to_dict(self) -> dict:
-        data = asdict(self)
+        data = {"report_kind": REPORT_KIND, **asdict(self)}
         data.pop("sources")  # Never dump entire source files into JSON reports.
         data["ast_incomplete"] = self.ast_incomplete
+        data["incomplete"] = self.incomplete
         data["layers"] = {str(k): {"name": v, "matches": sum(m.layer == k for m in self.matches)} for k, v in LAYERS.items()}
         data["limitations"] = "规则搜索 + 有限 AST 数据流线索；不进行完整跨文件分析。优先级是复核顺序，不是已确认漏洞等级。零匹配不代表安全。"
         data["excluded_directories"] = sorted(EXCLUDED_DIRS)
@@ -118,23 +141,34 @@ class ScanResult:
 
 
 def scan(root: str | Path, cancel: threading.Event | None = None,
-         progress: Callable[[str], None] | None = None, collect_source: bool = False) -> ScanResult:
+         progress: Callable[[str], None] | None = None, collect_source: bool = False,
+         *, config: ScanConfig | None = None, config_path: str | Path | None = None) -> ScanResult:
     base = Path(root).expanduser().resolve(strict=True)
     if not base.is_dir():
         raise ValueError("请选择代码文件夹。")
-    result = ScanResult(str(base))
+    if config is not None and config_path is not None:
+        raise ValueError("不能同时指定配置对象和配置文件。")
+    config = config if config is not None else load_config(base, config_path)
+    result = ScanResult(str(base), scan_config=config.to_dict())
 
     def skip(path: str, reason: str) -> None:
         result.skipped.append({"path": path, "reason": reason})
 
     def walk_error(error: OSError) -> None:
         skip(str(error.filename), f"目录无法读取：{error.strerror}")
+        result.coverage_errors.append({"path": str(error.filename), "code": "directory_unreadable", "reason": "目录无法读取"})
+
+    def coverage_error(path, code, reason):
+        result.coverage_errors.append({"path": path, "code": code, "reason": reason})
+        result.file_coverage.append({"path": path, "status": code})
 
     for directory, dirs, files in os.walk(base, followlinks=False, onerror=walk_error):
         allowed = []
         for name in sorted(dirs):
             child = Path(directory) / name
-            if name.lower() in EXCLUDED_DIRS or is_link(child):
+            if config.excludes_directory(child.relative_to(base).as_posix()):
+                skip(child.relative_to(base).as_posix() + "/", "项目配置排除")
+            elif name.lower() in EXCLUDED_DIRS or is_link(child):
                 skip(child.relative_to(base).as_posix() + "/", "依赖 / 生成目录 / 链接目录")
             else:
                 allowed.append(name)
@@ -145,30 +179,42 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
                 return result
             path = Path(directory) / name
             rel = path.relative_to(base).as_posix()
+            suffix = path.suffix.lower()
+            if not config.allows_file(rel):
+                skip(rel, "项目配置排除")
+                continue
             if path.suffix.lower() not in EXTENSIONS or name.endswith((".min.js", ".min.css")):
                 skip(rel, "不支持的格式 / 压缩文件")
                 continue
-            if result.files_scanned >= MAX_FILES or result.bytes_scanned >= MAX_TOTAL_BYTES or len(result.matches) >= MAX_MATCHES:
-                skip(rel, "达到扫描上限；此文件及剩余目录未扫描")
-                result.truncated = True
-                return result
             try:
                 if is_link(path) or not path.resolve().is_relative_to(base):
                     skip(rel, "符号链接 / 范围外文件")
                     continue
                 with path.open("rb") as stream:
-                    raw = stream.read(MAX_FILE_BYTES + 1)
-                if len(raw) > MAX_FILE_BYTES:
-                    skip(rel, "文件大于 1 MiB")
+                    header = stream.read(512)
+                    if is_generated_report(header.decode("utf-8-sig", errors="replace"), suffix):
+                        skip(rel, "审计报告产物")
+                        continue
+                    if result.files_scanned >= config.max_files or result.bytes_scanned >= config.max_total_bytes or len(result.matches) >= config.max_matches:
+                        skip(rel, "达到扫描上限；此文件及剩余目录未扫描")
+                        result.truncated = True
+                        return result
+                    raw = header[:config.max_file_bytes + 1]
+                    raw += stream.read(max(0, config.max_file_bytes + 1 - len(raw)))
+                if len(raw) > config.max_file_bytes:
+                    skip(rel, "文件超过读取预算")
+                    coverage_error(rel, "file_budget", "文件超过读取预算")
                     continue
                 if b"\x00" in raw:
                     skip(rel, "二进制 / 非 UTF-8 文件")
+                    coverage_error(rel, "binary_source", "二进制 / 非 UTF-8 文件")
                     continue
                 content = raw.decode("utf-8-sig")
             except (OSError, UnicodeError) as error:
                 skip(rel, f"读取失败：{type(error).__name__}")
+                coverage_error(rel, "read_failed", f"读取失败：{type(error).__name__}")
                 continue
-            if result.bytes_scanned + len(raw) > MAX_TOTAL_BYTES:
+            if result.bytes_scanned + len(raw) > config.max_total_bytes:
                 result.truncated = True
                 skip(rel, "达到总读取字节上限；此文件及剩余目录未扫描")
                 return result
@@ -176,14 +222,20 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
             result.bytes_scanned += len(raw)
             if progress:
                 progress(rel)
-            suffix = path.suffix.lower()
             result.languages[suffix] = result.languages.get(suffix, 0) + 1
             starts = [0] + [m.end() for m in re.finditer("\n", content)]
             lines = content.splitlines()
             file_matches = []
+            identities = {}
+            evidence_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
             def add(item):
                 neighborhood = "\n".join(line.strip() for line in lines[max(0, item.line - 3):item.line + 2])
-                item.fingerprint = hashlib.sha256((rel + "\0" + item.rule_id + "\0" + neighborhood).encode()).hexdigest()[:32]
+                item.legacy_fingerprint = hashlib.sha256((rel + "\0" + item.rule_id + "\0" + neighborhood).encode()).hexdigest()[:32]
+                identity = (item.rule_id, item.snippet.strip())
+                occurrence = identities.get(identity, 0)
+                identities[identity] = occurrence + 1
+                item.fingerprint = hashlib.sha256(("v2\0" + rel + "\0" + item.rule_id + "\0" + item.snippet.strip() + "\0" + str(occurrence)).encode()).hexdigest()[:32]
+                item.evidence_hash = evidence_hash
                 item.snippet = redact(item.snippet)
                 item.context = redact("\n".join(f"{i + 1:>5} {'>' if i + 1 == item.line else ' '} {lines[i]}" for i in range(max(0, item.line - 4), min(len(lines), item.line + 3))))[:4000]
                 item.evidence = [redact(value) for value in item.evidence]
@@ -192,12 +244,13 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
 
             found, notes = analyze(content, suffix)
             result.analysis_notes.extend({"path": rel, "reason": note} for note in notes)
+            result.file_coverage.append({"path": rel, "status": "ast_incomplete" if notes else "ast_and_patterns" if suffix in {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"} else "patterns_only"})
             for evidence in found:
-                if len(result.matches) >= MAX_MATCHES:
+                if len(result.matches) >= config.max_matches:
                     break
                 add(Match(path=rel, **evidence))
             for start, end in secret_locations(content):
-                if len(result.matches) >= MAX_MATCHES:
+                if len(result.matches) >= config.max_matches:
                     break
                 line = bisect.bisect_right(starts, start)
                 add(Match(rel, line, start - starts[line - 1] + 1, 20, "疑似硬编码凭据", lines[line - 1].strip()[:300],
@@ -211,9 +264,9 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
                     if line_index in seen:
                         continue
                     seen.add(line_index)
-                    if len(result.matches) >= MAX_MATCHES:
+                    if len(result.matches) >= config.max_matches:
                         result.truncated = True
-                        skip(rel, "达到 10000 条匹配上限；当前文件和后续文件不完整")
+                        skip(rel, "达到匹配预算；当前文件和后续文件不完整")
                         return result
                     snippet = lines[line_index].strip()[:300] if line_index < len(lines) else ""
                     if not any(m.line == line_index + 1 and m.layer == layer and m.confidence.startswith("AST") for m in file_matches):
@@ -232,10 +285,12 @@ def scan(root: str | Path, cancel: threading.Event | None = None,
                         used += size
                     elif candidate["path"] not in result.ai_omitted:
                         result.ai_omitted.append(candidate["path"])
-            if len(result.matches) >= MAX_MATCHES:
+            if len(result.matches) >= config.max_matches:
                 result.truncated = True
                 skip(rel, "达到匹配上限；后续范围未扫描")
                 return result
+    if result.files_scanned == 0:
+        result.coverage_errors.append({"path": ".", "code": "no_source", "reason": "未读取到支持的源文件"})
     return result
 
 
@@ -249,7 +304,7 @@ def markdown(result: ScanResult, language=None) -> str:
     from .reports import localized_metadata
     language = normalize(language or result.language)
     t = lambda text: tr(text, language)
-    status = "已取消，结果不完整" if result.cancelled else "达到上限，结果不完整" if result.truncated else "扫描完成，部分 AST 未完成" if result.ast_incomplete else "扫描完成"
+    status = "已取消，结果不完整" if result.cancelled else "达到上限，结果不完整" if result.truncated else "扫描完成，部分 AST 未完成" if result.ast_incomplete else "扫描完成，部分源码未读取" if result.coverage_errors else "扫描完成"
     summary = (f"Status: {t(status)}. {result.files_scanned} files scanned; {len(result.matches)} unverified review signals." if language == "en" else f"状态：{status}。扫描 {result.files_scanned} 个文件，{len(result.matches)} 条待人工确认线索。")
     parts = [t("# XSS Audit 报告"), f"{t('时间（UTC）')}: {result.created_at}", t("扫描目录："), fenced(result.root), summary,
              t("规则搜索与有限 AST 数据流分析不构成完整审计。优先级表示复核顺序，所有自动匹配均需人工确认；零匹配不代表安全。"),
@@ -274,8 +329,9 @@ def markdown(result: ScanResult, language=None) -> str:
         parts.extend([t("## 基线对比"), fenced(json.dumps(localized_metadata(result.baseline, language), ensure_ascii=False, indent=2))])
     if result.analysis_notes:
         parts.extend([t("## AST 未完成 / 解析说明"), fenced(json.dumps(localized_metadata(result.analysis_notes, language), ensure_ascii=False, indent=2))])
+    parts.extend([t("## 项目配置与文件覆盖"), fenced(json.dumps(localized_metadata({"configuration": result.scan_config, "errors": result.coverage_errors, "files": result.file_coverage}, language), ensure_ascii=False, indent=2))])
     parts.extend([t("## 排除与未读取"), t("默认排除目录：") + ", ".join(sorted(EXCLUDED_DIRS)),
-                  t("仅处理支持的文本扩展名；单文件上限 1 MiB、最多 10000 个文件 / 100 MiB / 10000 条匹配。读取 UTF-8；不跟随链接。不会执行项目文件。")])
+                  t("仅处理支持的 UTF-8 文本；读取与匹配预算见项目配置。不跟随链接，不执行项目文件。")])
     for item in result.skipped:
         parts.append(fenced(f"{item['path']} — {t(item['reason'])}"))
     if result.ai_report or result.ai_metadata:
