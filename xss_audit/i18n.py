@@ -5,6 +5,19 @@ import re
 
 LANGUAGES = ("en", "zh-CN")
 EN = {
+    "对比之前导出的完整 JSON 报告": "Compare against a previously exported full JSON report",
+    "仅导出基线之后新增的线索；需要 --baseline": "Export only new signals; requires --baseline",
+    "--only-new 需要 --baseline。": "--only-new requires --baseline.",
+    "基线必须是本工具导出的有效 JSON 报告。": "The baseline must be a valid JSON report exported by this tool.",
+    "基线报告超过 64 MiB。": "The baseline report exceeds 64 MiB.",
+    "基线扫描不完整，请使用完整扫描报告。": "The baseline scan is incomplete; use a complete scan report.",
+    "基线不能使用筛选后的报告，请重新导出全部线索。": "A filtered report cannot be a baseline; export all signals again.",
+    "基线线索缺少有效的路径、规则、行号或指纹。": "Baseline signals lack a valid path, rule, line or fingerprint.",
+    "基线按路径、规则和附近代码比较；未再观察到不代表已修复。请确认项目、引擎和扫描范围可比，并检查跳过项。": "Baselines compare paths, rules and nearby code. Not observed does not mean fixed. Check that the project, engine and scope are comparable, including skipped items.",
+    "基线对比": "Baseline comparison", "## 基线对比": "## Baseline comparison",
+    "对比基线": "Compare baseline", "选择完整 JSON 基线报告": "Select a full JSON baseline report",
+    "仅看新增": "New signals only",
+    "基线对比失败": "Baseline comparison failed", "新增线索": "New signal", "持续出现": "Unchanged signal",
     "界面和报告语言（默认英语）": "Interface and report language (default: English)",
     "高": "High", "中": "Medium", "信息": "Info", "待人工确认": "Needs review",
     "确认风险": "Confirmed risk", "误报": "False positive", "已修复": "Fixed", "无": "None",
@@ -170,6 +183,7 @@ EN = {
 
 # Numeric placeholders are presentation-only; captured paths/code are never evaluated.
 TEMPLATES = {
+    "基线对比：新增 {0}，持续 {1}，未再观察到 {2}；不代表已修复。": "Baseline: {0} new, {1} unchanged, {2} not observed; this does not mean fixed.",
     "L{0}: 潜在外部输入 {1}": "L{0}: potentially external input {1}",
     "L{0}: 到达 {1}": "L{0}: reaches {1}",
     "L{0}: 赋值给 {1}": "L{0}: assigned to {1}",

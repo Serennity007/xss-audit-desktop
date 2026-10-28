@@ -60,6 +60,21 @@ Limits: 60 MiB compressed, 250 MiB extracted, 15,000 archive entries and 20 MiB 
 
 Windows data lives under `%LOCALAPPDATA%\XSSAudit`: `imports` holds downloaded source and `state` holds review records and non-secret preferences. Imports are not automatically deleted. The API key is never persisted. Review identities use the project, rule, path and nearby-code digest; distant semantic changes may not invalidate a saved decision, so old decisions still need review. Records are not synchronized across machines.
 
+## Compare scans (unreleased source feature)
+
+Export a complete JSON report as the baseline. On the desktop, complete a new scan and select **Compare baseline**; **New signals only** filters the view, while exports still contain all current signals. Comparison details and signals no longer observed appear in the scope tab and exported reports.
+
+From the source CLI:
+
+```powershell
+python -m xss_audit "D:\projects\web-app" --format json -o baseline.json
+python -m xss_audit "D:\projects\web-app" --baseline baseline.json --only-new --fail-on-match --format html -o new-signals.html
+```
+
+Exit 1 means new signals remain after priority/review filters; incomplete scans still return 2. Comparison counts describe the full scan before report filters. Filtered, cancelled, truncated and incomplete-AST JSON reports cannot be used as baselines. Baseline files are limited to 64 MiB.
+
+Identities use path, rule and nearby-code fingerprints, including multiplicity. Moving a file or editing nearby code can produce a new identity. No longer observed does not mean fixed: scope changes, skipped/unread files and engine changes can also remove a match. Choose the same project and comparable engine/scope. Review decisions are not changed. An unfiltered compared report can become the next baseline; a new-only report cannot. This feature is not in the published v0.3.0 EXEs.
+
 ## Optional AI review
 
 Supports Responses and Chat Completions compatible endpoints. The default API base URL is `https://api.openai.com/v1`; choose a model available to your account. Endpoint compatibility, access and billing depend on the provider.

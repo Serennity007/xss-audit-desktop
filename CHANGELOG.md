@@ -4,6 +4,10 @@ Release dates below use Asia/Shanghai. Downloadable binaries remain versioned se
 
 ## Unreleased
 
+- Add a browser-local bilingual JS/TS/JSX/TSX workbench in web/, with bounded Babel AST evidence, pattern review, disposable analysis Workers, file editing/import, persisted review decisions and three offline report formats. Includes static build and WorkBuddy deployment handoff; no public deployment is claimed.
+
+- Add desktop baseline comparison and a new-signals view, CLI --baseline / --only-new, and comparison metadata in JSON, Markdown, HTML and SARIF. Missing signals are not classified as fixed; incomplete and filtered baselines are rejected. Available from source; not included in v0.3.0 binaries.
+
 - Refresh the English-default README and Chinese edition with a product banner, download links, a source example and task-oriented navigation.
 - Retain detailed usage in separate English and Chinese guides.
 - Add contribution and security-reporting policies, structured issue forms, a pull-request checklist and a documentation index.

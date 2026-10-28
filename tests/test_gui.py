@@ -36,6 +36,17 @@ class DesktopTests(unittest.TestCase):
                     error.assert_not_called()
                 self.assertEqual(app.result.files_scanned, 1)
                 self.assertGreaterEqual(len(app.tree.get_children()), 2)
+                baseline = base / "baseline.json"
+                from xss_audit.scanner import write_report
+                write_report(app.result, baseline, "json")
+                with patch("xss_audit.gui.filedialog.askopenfilename", return_value=str(baseline)):
+                    app.compare_baseline()
+                self.assertEqual(app.result.baseline["new"], 0)
+                app.only_new.set(True)
+                app.refresh()
+                self.assertFalse(app.tree.get_children())
+                app.only_new.set(False)
+                app.refresh()
                 app.category.set("1. DOM / HTML 注入")
                 app.refresh()
                 rows = app.tree.get_children()

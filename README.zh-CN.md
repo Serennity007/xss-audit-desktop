@@ -13,6 +13,10 @@
 
 # XSS Audit Desktop
 
+新增[浏览器工作台](web/README.md#中文)：本地分析 JS／TS／JSX／TSX，查看证据、保存人工复核并导出 JSON／Markdown／离线 HTML。可构建为静态网站，覆盖范围与桌面版不同。[WorkBuddy 发布交接](web/WORKBUDDY.md)。目前尚未发布公开网页链接。
+
+源码新增：桌面与 CLI 已支持基线对比，区分新增、持续出现和本次未再观察到的线索，见[使用说明](docs/USAGE.zh-CN.md#扫描基线对比未发布源码功能)。此改动尚未包含在已发布的 v0.3.0 EXE 中。后续扩展及验收条件见[优化路线](docs/ROADMAP.md#中文)。
+
 **在同一个工作台查看源码上下文、数据流证据与人工复核记录。**
 
 选择本地项目，或导入公开 GitHub 仓库，审查 JavaScript、TypeScript 与 Python 中的安全线索，保存判断，再导出可搜索的 HTML 或 SARIF 报告。桌面版用于交互复核，命令行版用于重复检查和批处理。

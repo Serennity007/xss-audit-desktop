@@ -79,6 +79,7 @@ class Match:
     context: str = ""
     fingerprint: str = ""
     note: str = ""
+    baseline_state: str = ""
 
 
 @dataclass
@@ -100,6 +101,7 @@ class ScanResult:
     languages: dict = field(default_factory=dict)
     import_metadata: dict = field(default_factory=dict)
     report_filters: dict = field(default_factory=dict)
+    baseline: dict = field(default_factory=dict)
 
     @property
     def ast_incomplete(self):
@@ -262,10 +264,14 @@ def markdown(result: ScanResult, language=None) -> str:
                       fenced(f"{match.path}:{match.line}:{match.column}"), fenced(match.snippet),
                       fenced("\n".join(t(step) for step in match.evidence)) if match.evidence else t("尚无完整数据流证据。"),
                       t("建议") + ": " + t(match.recommendation), t("复核备注") + ": " + (match.note or t("无"))])
+        if match.baseline_state:
+            parts.append(t("基线对比") + ": " + t("新增线索" if match.baseline_state == "new" else "持续出现"))
     if result.import_metadata:
         parts.extend([t("## 导入来源"), fenced(json.dumps(localized_metadata(result.import_metadata, language), ensure_ascii=False, indent=2))])
     if result.report_filters:
         parts.extend([t("## 报告筛选条件"), fenced(json.dumps(result.report_filters, ensure_ascii=False, indent=2))])
+    if result.baseline:
+        parts.extend([t("## 基线对比"), fenced(json.dumps(localized_metadata(result.baseline, language), ensure_ascii=False, indent=2))])
     if result.analysis_notes:
         parts.extend([t("## AST 未完成 / 解析说明"), fenced(json.dumps(localized_metadata(result.analysis_notes, language), ensure_ascii=False, indent=2))])
     parts.extend([t("## 排除与未读取"), t("默认排除目录：") + ", ".join(sorted(EXCLUDED_DIRS)),

@@ -33,7 +33,7 @@ def localized_dict(result, language):
         item["evidence"] = [tr(step, language) for step in item["evidence"]]
     for layer in data["layers"].values():
         layer["name"] = tr(layer["name"], language)
-    for key in ("skipped", "analysis_notes", "import_metadata", "ai_metadata"):
+    for key in ("skipped", "analysis_notes", "import_metadata", "ai_metadata", "baseline"):
         data[key] = localized_metadata(data[key], language)
     return data
 
@@ -49,8 +49,9 @@ def html_report(result, language=None):
     findings = []
     for match in sorted(result.matches, key=lambda m: ({"高": 0, "中": 1, "信息": 2}.get(m.priority, 3), m.path, m.line)):
         evidence = "\n".join(t(step) for step in match.evidence) or t("尚无完整数据流证据，请人工追踪。")
+        baseline_label = label("新增线索" if match.baseline_state == "new" else "持续出现") if match.baseline_state else ""
         findings.append(f'''<article class="finding" data-priority="{escape(match.priority)}">
-<div class="meta"><span class="badge">{label(match.priority)} · {label('优先级')}</span> {escape(match.rule_id)} · {escape(match.cwe)} · {label(match.status)}</div>
+<div class="meta"><span class="badge">{label(match.priority)} · {label('优先级')}</span> {escape(match.rule_id)} · {escape(match.cwe)} · {label(match.status)} · {baseline_label}</div>
 <h2>{label(match.rule)}</h2><p class="location">{escape(match.path)}:{match.line}:{match.column}</p>
 <p>{label(match.confidence)}</p><pre>{escape(match.context or match.snippet)}</pre>
 <details><summary>{label('查看数据流证据和建议')}</summary><pre>{escape(evidence)}</pre><p>{label(match.recommendation)}</p><p>{label('复核备注')}: {escape(match.note or t('无'))}</p></details></article>''')
@@ -58,6 +59,7 @@ def html_report(result, language=None):
     notes = "\n".join(f"{item['path']} — {t(item['reason'])}" for item in result.analysis_notes)
     skipped = "\n".join(f"{item['path']} — {t(item['reason'])}" for item in result.skipped)
     ai = f'<section><h2>{label("AI 辅助审计 · 未独立验证")}</h2><pre>{escape(result.ai_report)}</pre></section>' if result.ai_report else ""
+    baseline = ('<section><h2>' + label('基线对比') + '</h2><pre>' + escape(json.dumps(localized_metadata(result.baseline, language), ensure_ascii=False, indent=2)) + '</pre></section>') if result.baseline else ''
     return f'''<!doctype html><html lang="{language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>XSS Audit {escape(__version__)} · {label('审计报告')}</title><style>
@@ -65,7 +67,7 @@ def html_report(result, language=None):
 </style></head><body><header><h1>XSS AUDIT · {label('代码审计报告')}</h1><p class="muted">v{escape(__version__)} · {escape(result.created_at)} · {label(state)}</p><p>{escape(result.root)}</p></header>
 <div class="cards">{cards}</div><p>{label('优先级表示复核顺序，不是已确认漏洞等级。有限 AST 分析不解析完整跨文件调用链；零匹配不代表安全。识别出的敏感值已尽力遮蔽，分享前仍需检查。')}</p>
 <div class="filters"><input id="search" placeholder="{label('搜索文件、规则、证据或代码')}" aria-label="{label('搜索')}"><select id="priority"><option value="">{label('全部优先级')}</option><option value="高">{label('高')}</option><option value="中">{label('中')}</option><option value="信息">{label('信息')}</option></select><span id="count" data-prefix="{'Showing ' if language == 'en' else '显示 '}" data-suffix="{' signals' if language == 'en' else ' 条'}"></span></div>
-<main>{''.join(findings) or '<section>' + label('未发现匹配线索。请结合扫描范围与解析说明评估。') + '</section>'}</main>{ai}
+<main>{''.join(findings) or '<section>' + label('未发现匹配线索。请结合扫描范围与解析说明评估。') + '</section>'}</main>{baseline}{ai}
 <section><details><summary>{label('范围与未读取 / AST 解析说明')}</summary><pre>{escape(json.dumps(localized_metadata({'import': result.import_metadata, 'report_filters': result.report_filters, 'AI_scope': result.ai_metadata}, language), ensure_ascii=False, indent=2))}</pre><pre>{escape(notes or t('未记录 AST 解析错误。未支持语言仍仅执行规则搜索。'))}</pre><pre>{escape(skipped or t('无跳过项'))}</pre><p>{label('单文件 1 MiB；最多 10000 文件 / 100 MiB / 10000 线索。不执行项目代码。')}</p></details></section>
 <footer>{label('基于 songjianyang/xss-audit（MIT）。本报告可离线打开，无外部资源请求。')}</footer><script>
 const search=document.getElementById('search'), priority=document.getElementById('priority');
@@ -92,8 +94,10 @@ def sarif(result, language=None):
                                "evidence": [t(step) for step in match.evidence], "unverified": True}}
         if match.status == "误报":
             item["suppressions"] = [{"kind": "external", "status": "accepted", "justification": match.note or t("用户标记为误报")}]
+        if match.baseline_state:
+            item["baselineState"] = match.baseline_state
         results.append(item)
     return {"$schema": "https://json.schemastore.org/sarif-2.1.0.json", "version": "2.1.0", "runs": [{
         "tool": {"driver": {"name": "XSS Audit Desktop", "version": __version__, "informationUri": "https://github.com/Serennity007/xss-audit-desktop", "rules": list(rules.values())}},
         "results": results, "invocations": [{"executionSuccessful": not (result.cancelled or result.truncated or result.analysis_notes)}],
-        "properties": {"language": language, "limitations": t("规则搜索 + 有限 AST 数据流线索；不进行完整跨文件分析。优先级是复核顺序，不是已确认漏洞等级。零匹配不代表安全。"), "analysisNotes": localized_metadata(result.analysis_notes, language)}}]}
+        "properties": {"language": language, "limitations": t("规则搜索 + 有限 AST 数据流线索；不进行完整跨文件分析。优先级是复核顺序，不是已确认漏洞等级。零匹配不代表安全。"), "analysisNotes": localized_metadata(result.analysis_notes, language), "baseline": localized_metadata(result.baseline, language)}}]}

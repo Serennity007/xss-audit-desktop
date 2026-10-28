@@ -1,0 +1,4 @@
+export const sample = [
+  { path: 'browser.tsx', content: '// Synthetic fixture. Do not execute.\nfunction preview() {\n  const input: string = new URLSearchParams(location.search).get("q") ?? "";\n  const html = "<p>" + input + "</p>";\n  document.querySelector("#preview")!.innerHTML = html;\n  document.querySelector("#safe")!.textContent = input;\n  window.open(input);\n  return <section dangerouslySetInnerHTML={{ __html: input }} />;\n}\n' },
+  { path: 'controls.js', content: '// A constant assignment clears the tracked input.\nlet value = location.hash;\nvalue = "A fixed message";\noutput.innerHTML = value;\n\n// HTML sanitizer: still requires human verification.\nconst raw = location.search;\noutput.innerHTML = DOMPurify.sanitize(raw);\n\n// Text output is not an HTML-write sink.\noutput.textContent = raw;\n' }
+];

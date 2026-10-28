@@ -10,13 +10,14 @@ from .ai import DEFAULT_BASE_URL, review
 from .scanner import scan, write_report
 from .importer import import_github
 from .state import StateStore
+from .baseline import load_baseline, compare
 from .i18n import LANGUAGES, normalize, tr
 
 
 def main(argv=None) -> int:
-    if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     pre = argparse.ArgumentParser(add_help=False)
     pre.add_argument("--lang", choices=LANGUAGES, default=os.environ.get("XSS_AUDIT_LANG", "en"))
     language = normalize(pre.parse_known_args(argv)[0].lang)
@@ -43,6 +44,8 @@ def main(argv=None) -> int:
     parser.add_argument("--min-priority", choices=["high", "medium", "info"], type=lambda value: {"高": "high", "中": "medium", "信息": "info"}.get(value, value), default="info", help="报告与 fail-on-match 的最低复核优先级")
     parser.add_argument("--ignore-reviewed", action="store_true", help="不导出已标记为误报 / 已修复的线索")
     parser.add_argument("--no-saved-review", action="store_true", help="不读取本机保存的复核状态")
+    parser.add_argument("--baseline", help="对比之前导出的完整 JSON 报告")
+    parser.add_argument("--only-new", action="store_true", help="仅导出基线之后新增的线索；需要 --baseline")
     parser.add_argument("--ai", action="store_true", help="明确同意发送已纳入范围的源代码到 AI 接口；可能产生 API 费用")
     parser.add_argument("--model", default=os.environ.get("XSS_AUDIT_MODEL", ""), help="AI 模型名称")
     parser.add_argument("--base-url", default=os.environ.get("OPENAI_BASE_URL", DEFAULT_BASE_URL))
@@ -54,9 +57,12 @@ def main(argv=None) -> int:
         parser.error("请提供本地代码文件夹或 --repo，二者选择一项。")
     if (args.ref or args.destination) and not args.repo:
         parser.error("--ref / --destination 仅与 --repo 一起使用。")
+    if args.only_new and not args.baseline:
+        parser.error("--only-new 需要 --baseline。")
     suffix = {"markdown": "md", "json": "json", "html": "html", "sarif": "sarif"}[args.format]
     output = args.output or f"xss-audit-report-{datetime.now():%Y%m%d-%H%M%S-%f}.{suffix}"
     try:
+        baseline = load_baseline(args.baseline) if args.baseline else None
         metadata = {}
         path = args.path
         if args.repo:
@@ -78,11 +84,14 @@ def main(argv=None) -> int:
             except ValueError as error:
                 ai_error = str(error)
                 result.ai_metadata = {"error": ai_error}
+        if baseline is not None:
+            compare(result, baseline, args.baseline)
         order = {"高": 0, "中": 1, "信息": 2}
         result.report_filters = {"min_priority": args.min_priority, "ignore_reviewed": args.ignore_reviewed,
-                                 "matches_before_filters": len(result.matches)}
+                                 "matches_before_filters": len(result.matches), "only_new": args.only_new}
         result.matches = [m for m in result.matches if order[m.priority] <= order[args.min_priority]
-                          and not (args.ignore_reviewed and m.status in {"误报", "已修复"})]
+                          and not (args.ignore_reviewed and m.status in {"误报", "已修复"})
+                          and not (args.only_new and m.baseline_state != "new")]
         target = write_report(result, output, args.format, language=language)
         print(t(f"扫描 {result.files_scanned} 个文件，{len(result.matches)} 条待确认线索。报告：{target}"))
         if ai_error:

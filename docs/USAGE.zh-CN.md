@@ -82,6 +82,21 @@ AI 上下文预算为约 **18 万字符**，优先选择 AST 高优先级文件�
 
 实现依据 [OpenAI 官方 Responses 文档](https://developers.openai.com/api/docs/guides/migrate-to-responses?api-mode=responses)。协议使用模拟 HTTP 服务验证；发布前未使用真实付费模型联调，审计质量未经基准评测。
 
+## 扫描基线对比（未发布源码功能）
+
+先导出包含全部线索的 JSON 报告。桌面版完成新扫描后点击“对比基线”，选择旧报告；“仅看新增”只筛选视图，桌面导出仍包含全部当前线索。范围页和四种报告保留对比摘要及未再观察到的线索位置。
+
+源码 CLI 示例：
+
+```powershell
+python -m xss_audit "D:\projects\web-app" --format json -o baseline.json
+python -m xss_audit "D:\projects\web-app" --baseline baseline.json --only-new --fail-on-match --lang zh-CN --format html -o new-signals.html
+```
+
+筛选后有新增线索时返回 1；扫描不完整仍返回 2。对比摘要统计完整扫描，随后才应用报告筛选。不接受已筛选、已取消、达到上限或 AST 不完整的 JSON 基线，基线文件上限为 64 MiB。
+
+身份按路径、规则和附近代码指纹比较，保留重复出现次数；文件移动或附近代码变化可能产生新身份。“未再观察到”不代表已修复，也可能由扫描范围、未读取文件或引擎变化造成。请自行核对项目、引擎和范围可比。对比不会更改人工复核状态。包含全部线索的对比报告可作为下一次基线；仅新增报告不可。本功能尚未包含在公开 v0.3.0 EXE 中。
+
 ## 规则与扫描范围
 
 原始 14 类 XSS 线索继续保留；另增加 SQL 构造、Shell、路径、SSRF、反序列化与凭据，共 20 个复核类别。不同语言和类别的分析深度不同，详见 [分析边界](ANALYSIS.md)。

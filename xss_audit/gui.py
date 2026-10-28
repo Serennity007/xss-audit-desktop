@@ -16,6 +16,7 @@ from .ai import DEFAULT_BASE_URL, review, validate_endpoint
 from .scanner import LAYERS, scan, write_report
 from .importer import import_github
 from .state import STATUSES, StateStore
+from .baseline import load_baseline, compare
 from .i18n import canonical, normalize, tr
 
 
@@ -138,6 +139,8 @@ class AuditApp:
         ttk.Label(toolbar, text="搜索").pack(side="left", padx=(0, 5))
         ttk.Entry(toolbar, textvariable=self.search, width=20).pack(side="left", fill="x", expand=True)
         self.search.trace_add("write", lambda *_: self.refresh())
+        self.baseline_button = ttk.Button(toolbar, text="对比基线", state="disabled", command=self.compare_baseline)
+        self.baseline_button.pack(side="right", padx=5)
         self.export_button = ttk.Button(toolbar, text="导出报告", state="disabled", command=self.export)
         self.export_button.pack(side="right")
         table_frame = ttk.Frame(local)
@@ -162,6 +165,9 @@ class AuditApp:
         self.review_status = self.ui_var(STATUSES[0])
         ttk.Combobox(review_row, textvariable=self.review_status, values=STATUSES, state="readonly", width=12).pack(side="left")
         self.review_note = tk.StringVar()
+        self.only_new = tk.BooleanVar(value=False)
+        self.new_only_check = ttk.Checkbutton(review_row, text="仅看新增", variable=self.only_new, command=self.refresh, state="disabled")
+        self.new_only_check.pack(side="left", padx=6)
         ttk.Label(review_row, text="备注").pack(side="left", padx=(8, 0))
         ttk.Entry(review_row, textvariable=self.review_note).pack(side="left", fill="x", expand=True, padx=8)
         self.review_button = ttk.Button(review_row, text="保存复核标记", command=self.save_review, state="disabled")
@@ -337,11 +343,27 @@ class AuditApp:
         self.review_button.configure(state="normal" if not busy and self.tree.selection() else "disabled")
         self.path_entry.configure(state="disabled" if busy else "normal")
         self.cancel_button.configure(state="normal" if busy and not ai else "disabled")
-        for button in (self.export_button, self.ai_export):
+        for button in (self.export_button, self.ai_export, self.baseline_button):
             button.configure(state="normal" if not busy and self.result else "disabled")
+        self.new_only_check.configure(state="normal" if not busy and self.result and self.result.baseline else "disabled")
         valid = self.result and not self.result.cancelled and not self.result.truncated and self.result.sources
         self.ai_button.configure(state="normal" if not busy and valid else "disabled")
         self.progress.start(12) if busy else self.progress.stop()
+
+    def compare_baseline(self):
+        if self.busy or not self.result:
+            return
+        path = filedialog.askopenfilename(title=self.tr("选择完整 JSON 基线报告"), filetypes=[("JSON", "*.json")])
+        if not path:
+            return
+        try:
+            value = compare(self.result, load_baseline(path), path)
+            self.new_only_check.configure(state="normal")
+            self.refresh()
+            self.show_scope()
+            self.status.set(f"基线对比：新增 {value['new']}，持续 {value['unchanged']}，未再观察到 {len(value['not_observed'])}；不代表已修复。")
+        except (OSError, ValueError) as error:
+            self.error("基线对比失败", str(error))
 
     def start_scan(self):
         if self.busy:
@@ -353,6 +375,7 @@ class AuditApp:
         self.cancel.clear()
         self.result = None
         self.refresh()
+        self.only_new.set(False)
         self.set_text(self.detail, "正在扫描，完成后可选择线索查看代码上下文和证据。")
         self.set_text(self.ai_text, "新扫描已开始；之前的 AI 结果已清除。")
         self.set_busy(True)
@@ -429,6 +452,8 @@ class AuditApp:
         scope = {self.tr("扫描目录"): value.root, self.tr("导入来源"): localized_metadata(value.import_metadata, self.language),
                  self.tr("语言统计"): value.languages, self.tr("AST 说明"): notes(value.analysis_notes),
                  self.tr("跳过项"): notes(value.skipped), self.tr("类别"): {self.tr(name): sum(m.layer == n for m in value.matches) for n, name in LAYERS.items()}}
+        if value.baseline:
+            scope[self.tr("基线对比")] = localized_metadata(value.baseline, self.language)
         self.set_text(self.scope_text, json.dumps(scope, ensure_ascii=False, indent=2))
 
     def poll(self):
@@ -481,7 +506,7 @@ class AuditApp:
         ordered = sorted(enumerate(self.result.matches), key=lambda pair: ({"高": 0, "中": 1, "信息": 2}[pair[1].priority], pair[1].path, pair[1].line))
         for index, match in ordered:
             haystack = " ".join((match.path, match.rule, self.tr(match.rule), match.snippet, match.cwe, match.status, self.tr(match.status), match.note)).lower()
-            if (layer is None or match.layer == layer) and (priority == "全部优先级" or match.priority == priority) and (not search or search in haystack):
+            if (layer is None or match.layer == layer) and (priority == "全部优先级" or match.priority == priority) and (not search or search in haystack) and (not self.only_new.get() or match.baseline_state == "new"):
                 self.tree.insert("", "end", iid=str(index), values=(self.tr(match.priority), self.tr(match.rule), match.path, match.line, self.tr(match.status)))
         if selected_rows and self.tree.exists(selected_rows[0]):
             self.tree.selection_set(selected_rows[0])
@@ -496,6 +521,8 @@ class AuditApp:
             evidence = "\n".join(item.evidence) or "尚无完整数据流证据，请人工追踪。"
             evidence = "\n".join(self.tr(line) for line in item.evidence) or self.tr("尚无完整数据流证据，请人工追踪。")
             self.set_text(self.detail, f"{item.path}:{item.line}:{item.column} · {item.rule_id} · {item.cwe}\n{self.tr('优先级')} {self.tr(item.priority)} · {self.tr(item.confidence)}\n\n{item.context or item.snippet}\n\n{evidence}\n\n{self.tr('建议')}：{self.tr(item.recommendation)}")
+            if item.baseline_state:
+                self.set_text(self.detail, self.detail.get("1.0", "end").rstrip() + "\n\n" + self.tr("基线对比") + ": " + self.tr("新增线索" if item.baseline_state == "new" else "持续出现"))
 
     def export(self):
         if not self.result or self.busy:

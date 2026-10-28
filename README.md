@@ -13,6 +13,10 @@
 
 # XSS Audit Desktop
 
+New browser workbench: [web/](web/README.md) adds browser-local JS/TS/JSX/TSX analysis, evidence inspection, local review records and JSON/Markdown/offline HTML exports. Build it as a static site; its coverage differs from the desktop engine. [WorkBuddy handoff](web/WORKBUDDY.md). No public web deployment is claimed yet.
+
+Source-only update: desktop and CLI baseline comparison now distinguishes new, unchanged and no-longer-observed review signals. See the [usage guide](docs/USAGE.en.md#compare-scans-unreleased-source-feature). This is not included in the published v0.3.0 binaries. Planned extensions and acceptance conditions are in the [roadmap](docs/ROADMAP.md).
+
 **Review source code with the context, flow evidence and review decisions in one workbench.**
 
 Open a local project or import a public GitHub repository. Inspect security signals in JavaScript, TypeScript and Python, record your decisions, and share searchable HTML or SARIF reports. Use the Windows desktop app for interactive review and the CLI for repeatable checks.
