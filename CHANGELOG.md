@@ -4,6 +4,11 @@ Release dates below use Asia/Shanghai. Downloadable binaries remain versioned se
 
 ## Unreleased
 
+- Add a repository-auditor robustness research platform: unchanged-source baseline/context pairs, external oracle labels, fixed anchoring/authority/instruction templates and equal-character neutral controls.
+- Add a bounded read-only multi-file agent with literal search, strict JSON actions, exposed-line evidence checks, redacted visible transcripts and explicit budget/error outcomes.
+- Add `xss-audit-research` / `python -m xss_audit.research_cli` preparation, repeated balanced trials, conditional detection/localization/evidence regression metrics, source/context inventory verification and offline HTML/JSON reports.
+- Keep scripted offline demonstrations separate from live model results. Document methodological limits and verified references in [English](docs/ROBUSTNESS.en.md) / [中文](docs/ROBUSTNESS.zh-CN.md). No real-model robustness claim is made by these changes.
+
 - Add shared `.xss-audit.toml` scan scope, include/exclude globs and resource budgets, with CLI `--config` and `--allow-partial` controls.
 - Record per-file analysis depth and coverage failures in desktop and exported reports. Strict CLI scans return 2 for unreadable/oversized supported source and projects without readable source.
 - Recognize generated JSON/HTML audit reports so repeated scans do not report their own output as application code.

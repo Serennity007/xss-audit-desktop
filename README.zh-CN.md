@@ -21,6 +21,8 @@
 
 `main` 的功能更新现已支持项目扫描配置、逐文件覆盖说明、跨快照复核记录保留及状态筛选，并补充部分 HTML / Python 数据流模型。[配置与行为变化](docs/SCAN-CONFIG.zh-CN.md)包含使用方法及复核记录兼容说明；下方 v0.3.0 下载仍是已发布的旧版二进制。
 
+源码另提供[仓库级审计鲁棒性研究平台](docs/ROBUSTNESS.zh-CN.md)：构建源码不变、README 上下文不同的实验对，记录受控多文件审计轨迹，并分别分析检出、定位和证据退化。可运行 `python -m xss_audit.research_cli demo --output D:\audit-research\demo --offline-demo` 查看合成演示；演示使用脚本响应，不代表真实模型效果。
+
 **[下载 Windows 版](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [试用示例](#先用附带示例体验) · [文档导航](docs/README.md) · [验证记录](docs/VERIFICATION.md#中文) · [参与贡献](docs/CONTRIBUTING.zh-CN.md)
 
 ## 下载即用
