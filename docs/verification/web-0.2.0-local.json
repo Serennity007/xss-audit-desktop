@@ -1,0 +1,119 @@
+{
+  "observed_date": "2026-10-29",
+  "timezone": "Asia/Shanghai",
+  "web_version": "0.2.0",
+  "engine": "web-ast/0.2.0",
+  "node": "24.18.0",
+  "python": "3.11.9",
+  "platform": "Windows",
+  "web_tests": {
+    "run": 34,
+    "passed": 34,
+    "failed": 0,
+    "command": "cd web; npm test"
+  },
+  "integrated_python_tests": {
+    "run": 148,
+    "passed": 145,
+    "failed": 0,
+    "skipped": 3,
+    "skip_reason": "Windows symbolic-link creation permission unavailable",
+    "command": ".venv/Scripts/python.exe -m unittest discover -s tests -v"
+  },
+  "environment_note": "An initial invocation using global Python without the declared tree-sitter dependencies failed. The repository virtual environment with declared dependencies produced the recorded passing regression run; desktop source was not modified.",
+  "build": "npm run build: success",
+  "browser_checks": [
+    "basic example: 2 files, 6 signals, 3 high-priority signals",
+    "component example: 3 files, 3 signals, 1 high; original Vue source/sink lines 5/7; explicit template/JSON/external-script coverage gaps; baseline creation disabled",
+    "real selected-folder import: 5 entries, 2 accepted source files, 3 skipped dependency/build/unsupported paths, then 1 real AST signal",
+    "local manual decision and inert note saved; saved-status plus evidence filters produced 1/6; language switch preserved review; synthetic decision restored to pending/empty note afterward",
+    "JSON download and real browser file-chooser reimport as baseline: 6 unchanged signals",
+    "one HTML write replaced with textContent: 5 total signals, 2 new, 3 unchanged, 3 not observed; no automatic fixed decisions",
+    "new-only filter on identical baseline: 0/6; Ctrl+Enter starts analysis",
+    "syntax error produces partial results, parse note and incomplete comparison warning; cannot be used as a baseline",
+    "invalid scope pattern rejected; excluding browser.tsx produced 1 analyzed file, 3 signals, scope-change warning and exclusion coverage record",
+    "30 synthetic files totaling 2280690 bytes imported, analysis started and actually cancelled; no results retained",
+    "five real browser downloads: JSON, Markdown, HTML, SARIF and CSV; all-signal clipboard copy contains source evidence",
+    "downloaded SARIF validated against the OASIS SARIF 2.1.0 JSON schema; downloaded CSV had 14 columns on every row; downloaded HTML contained no script elements and a restrictive CSP",
+    "390px mobile Chinese/English and 1366px desktop viewports: no document horizontal overflow; actual screenshots saved",
+    "long-line UI check: one signal, bounded 2120-character context and visible truncation disclosure",
+    "no browser warnings or errors observed in the inspected final flow"
+  ],
+  "sarif_schema": {
+    "source": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+    "sha256": "c3b4bb2d6093897483348925aaa73af03b3e3f4bd4ca38cef26dcb4212a2682e"
+  },
+  "public_preview": {
+    "url": "https://xss-audit-studio.app.workbuddy.host/?sharecode=JHJQZE62LQ",
+    "existing_source_version": "0.1.0",
+    "observed": "Page loaded and synthetic example produced 2 files / 6 signals / 3 high-priority signals",
+    "new_version_deployed": false,
+    "note": "User supplied the original full deployment checklist. Only the checks explicitly described here were independently observed; GitHub release does not redeploy WorkBuddy."
+  },
+  "not_verified": [
+    "fresh signed-out profile on public host",
+    "new 0.2.0 WorkBuddy deployment",
+    "all browser engines",
+    "browser-forced timeout and worker-load failure (automated lifecycle tests cover these handlers)",
+    "live AI or third-party source quality benchmark",
+    "detection precision/recall or exploitability",
+    "third-party SARIF platform ingestion"
+  ],
+  "source_sha256": {
+    "web/index.html": "d0f331ddeaa2b5e780123fd1f497b8be06e8d1a09f18a1a12cd0d333a994bd6a",
+    "web/style.css": "338bc4452fa0d224e5e9ea9cb1f7510152de68b9cd3f7d3ff793567a6b99d3eb",
+    "web/package.json": "eb403ddd9186f33c4818f2faf59dcca9380ae622b150dce104a3dccbf91902df",
+    "web/package-lock.json": "8f425e7b651ef4287f3c233298e1b0131340df9fad53a2e926197675497d5511",
+    "web/src/app.js": "23715871d7ae0fe581e26de504c76c6173fce44ef59f6965ea2cacb4c88a2598",
+    "web/src/baseline.js": "36b2bdb464a0e2e8964d1e29c1782607163928118174959278d2ee6d98bfb5ec",
+    "web/src/components.js": "b7a9ec01bd3ba90c8f12a7a2bb0ebf215817bbc8ba5b623368fbad8c3bc03e46",
+    "web/src/engine.js": "0a60b769e736e172294050a86a2fa0d94764efe7336beaff8ee8ad94efc9ea71",
+    "web/src/filters.js": "0208139fdc8a275964d052e26811bacc021632a02453ba0b5d1a0c5a2cab0daf",
+    "web/src/i18n.js": "fe9588807644e45709385c243a1c215e8edde99d3fc833bff51c6e7006f0d600",
+    "web/src/imports.js": "8cccf887d8fcdf7ab017ee41bca42b43cdb104d726f8f896233540526aa89564",
+    "web/src/inputs.js": "c5c0d30eac07e23c3cbea966a6bc7f3566732f1c7c571405704b683ecdd9a419",
+    "web/src/reports.js": "688712f81751e86b8d1c991592ec6dc48d3661c5ca10777384b6c3c1e2d0bb61",
+    "web/src/runner.js": "7d47b4197c7f5d33458344e6cc7beed86387255d781c2bbe2b832a2bc5a2ee3a",
+    "web/src/sample.js": "1570d673ba7839b5401f49c708364a430273ab83918fa499ea9382367401eab0",
+    "web/src/scope.js": "ce386b0bc9ced4e49c72cde752dd37192441392adb1d099a8d0f7c8686653a61",
+    "web/src/version.js": "8655d385224ba0d69e03315823b324c72e6a88df831143f6dcea3f5e8e2db172",
+    "web/src/worker.js": "47bde6cdd686b9787820332678300a7a64e770ffbe4257e5bea33d39a2e8ee04",
+    "web/scripts/build.mjs": "292896730c73348f9a6b72c2977398010d27bbce9e59a684f062e7813f8a413d",
+    "web/scripts/serve.mjs": "ba4694546caee4e66930ad18d13bd48f13d52c6129727542b0466f7239ec1bee",
+    "web/tests/engine.test.mjs": "a132e84bec86927fa5824a34dce2bee738fc7209f0f0fb98141b24af7f762be0",
+    "web/tests/project.test.mjs": "27b0089b6edd2ed70d7378015354935f7b8188d0e65f68da0294554076e064e5",
+    "web/tests/runner.test.mjs": "c910616a8a61417d101d0092c44b52c68ffddd23fdc4bb8abc2adfa5c328143a"
+  },
+  "build_files": {
+    "app.js": {
+      "bytes": 50672,
+      "sha256": "06394813869a2c43d42ba4dbbcff90702d3c2712e3671734e0b32a4904ca04ac"
+    },
+    "index.html": {
+      "bytes": 9140,
+      "sha256": "90dcef5ce7404c8a7a249ae582838e748a62d1009549cbd0921423c330779862"
+    },
+    "LICENSE.txt": {
+      "bytes": 1100,
+      "sha256": "63588e25c2aaf80d243040279b8889002547c8cbee13307203dbe302c8a3096a"
+    },
+    "NOTICE.txt": {
+      "bytes": 849,
+      "sha256": "fb8bd467b08a5569704c39e63544d46d6bf1b4021f428b2475c4fce03d3a07aa"
+    },
+    "style.css": {
+      "bytes": 12209,
+      "sha256": "338bc4452fa0d224e5e9ea9cb1f7510152de68b9cd3f7d3ff793567a6b99d3eb"
+    },
+    "THIRD-PARTY-NOTICES.txt": {
+      "bytes": 6995,
+      "sha256": "8ca5ca0a62f79c4476c325451edbb8824b8d53473fc76552304311c294a4797a"
+    },
+    "worker.js": {
+      "bytes": 452776,
+      "sha256": "f003e38cd2eb39fac71c2351495d868aa6334ac812035b6db8bcecb2e23431b2"
+    }
+  },
+  "notice": "Local engineering verification, not evidence of detection accuracy, full-repository coverage, exploitability or research novelty. Windows v0.3.0 executables are unchanged.",
+  "hash_basis": "SHA-256 of local file bytes at verification. Checkout line-ending conversion can change source byte hashes; this is not a reproducible-build attestation."
+}

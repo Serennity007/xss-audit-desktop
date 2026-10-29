@@ -13,7 +13,7 @@
 
 # XSS Audit Desktop
 
-New browser workbench: [web/](web/README.md) adds browser-local JS/TS/JSX/TSX analysis, evidence inspection, local review records and JSON/Markdown/offline HTML exports. Build it as a static site; its coverage differs from the desktop engine. [WorkBuddy handoff](web/WORKBUDDY.md). No public web deployment is claimed yet.
+**[Try the browser workbench](https://xss-audit-studio.app.workbuddy.host/?sharecode=JHJQZE62LQ)** — public WorkBuddy preview, opened and sample-tested on 2026-10-29 (deployed from 0.1.0). The [0.2.0 browser release](https://github.com/Serennity007/xss-audit-desktop/releases/tag/web-v0.2.0) adds folder imports, explicit project scope, limited HTML/Vue/Svelte script review, combined triage filters, conservative version comparison and five export formats. These new features need separate WorkBuddy redeployment; GitHub publication does not update the preview. [Web documentation](web/README.md) · [Deployment handoff](web/WORKBUDDY.md) · [Browser changes](web/CHANGELOG.md). Browser and desktop coverage differ.
 
 Source-only update: desktop and CLI baseline comparison now distinguishes new, unchanged and no-longer-observed review signals. See the [usage guide](docs/USAGE.en.md#compare-scans-unreleased-source-feature). This is not included in the published v0.3.0 binaries. Planned extensions and acceptance conditions are in the [roadmap](docs/ROADMAP.md).
 The development version on `main` adds project scan settings, per-file coverage, retained review history, status filtering and additional HTML/Python flow models. See [scan configuration and behavior changes](docs/SCAN-CONFIG.en.md). The v0.3.0 downloads below remain the previously published binaries.

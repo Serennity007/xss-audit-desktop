@@ -3,6 +3,8 @@
 | Task / 任务 | English | 简体中文 |
 | --- | --- | --- |
 | Understand and download the app / 项目与下载 | [Project home](../README.md) | [项目首页](../README.zh-CN.md) |
+| Use the browser workbench / 网页审查工作台 | [Browser guide](../web/README.md) | [网页说明](../web/README.md#中文) |
+| Update WorkBuddy deployment / 更新参赛网站 | [Deployment handoff](../web/WORKBUDDY.md) | [发布交接](../web/WORKBUDDY.md) |
 | Configure CLI, imports and AI / 使用与配置 | [Detailed guide](USAGE.en.md) | [详细指南](USAGE.zh-CN.md) |
 | Understand detection limits / 分析边界 | [Analysis boundaries](ANALYSIS.en.md) | [分析边界](ANALYSIS.md) |
 | Understand localization / 语言范围 | [Language coverage](LANGUAGES.md) | [语言范围](LANGUAGES.md) |

@@ -1,19 +1,26 @@
-import { sample } from './sample.js';
-import { validateFiles } from './engine.js';
+import { sample, componentSample } from './sample.js';
+import { validateFiles } from './inputs.js';
 import { translate } from './i18n.js';
-import { signalText, exportReport } from './reports.js';
+import { signalText, reportText, exportReport } from './reports.js';
 import { startAnalysis } from './runner.js';
+import { DEFAULT_SCOPE, validateScope } from './scope.js';
+import { importSources } from './imports.js';
+import { BASELINE_BYTES, validateBaseline, parseBaseline, compareBaseline, clearComparison } from './baseline.js';
+import { filterFindings } from './filters.js';
 
 const $ = id => document.getElementById(id);
 const REVIEW_KEY = 'xss-audit-studio.reviews.v1';
 const statuses = new Set(['pending', 'confirmed', 'false_positive', 'fixed']);
 let language = 'zh', files = [{ path:'review.ts', content:'' }], active = 0;
 let result = null, selected = null, stopAnalysis = null, statusKey = 'ready';
+let baseline = null, projectVersion = 0, baselineVersion = 0, importInventory = [];
+const drafts = new Map();
 const t = key => translate(language, key);
 function element(tag, text, className) { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (className) node.className = className; return node; }
 function announce(key) { statusKey = key; $('status').textContent = t(key); }
 function cancelWorker() { if (stopAnalysis) stopAnalysis(); stopAnalysis = null; $('cancel').hidden = true; $('analyze').disabled = false; }
-function invalidate(key = 'stale') { cancelWorker(); result = null; selected = null; announce(key); renderResults(); renderDetail(); metrics(); }
+function invalidate(key = 'stale') { projectVersion++; drafts.clear(); cancelWorker(); result = null; selected = null; announce(key); renderResults(); renderDetail(); metrics(); renderBaseline(); renderFiles(); }
+function readScope() { return validateScope({include:$('include').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean), exclude:$('exclude').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}); }
 function reviews() {
   try {
     const raw = localStorage.getItem(REVIEW_KEY);
@@ -35,11 +42,15 @@ function metrics() {
   $('metric-high').textContent = result ? result.findings.filter(f => f.priority === 'high').length : '—';
   $('metric-reviewed').textContent = result ? result.findings.filter(f => f.status !== 'pending').length : '—';
   document.querySelectorAll('[data-format]').forEach(b => b.disabled = !result);
+  $('copy-all').disabled = !result;
+  $('use-baseline').disabled = !result || result.incomplete;
 }
 function renderFiles() {
   $('file-list').replaceChildren(); $('file-count').textContent = String(files.length).padStart(2, '0');
   files.forEach((file, index) => {
     const button = element('button', file.path, 'file-item' + (active === index ? ' active' : ''));
+    const count = result?.findings.filter(f=>f.path === file.path).length;
+    if (count !== undefined) button.append(element('span', String(count), 'file-signal-count'));
     button.title = file.path; button.setAttribute('aria-pressed', String(active === index)); button.onclick = () => choose(index); $('file-list').append(button);
   });
   $('remove').disabled = files.length === 0;
@@ -56,18 +67,18 @@ function choose(index) {
   $('code').disabled = !file; $('filename').disabled = !file;
   $('file-type').textContent = file?.path.split('.').pop().toUpperCase().slice(0, 8) || '—';
   updateGutter(); renderFiles();
+  if ($('file-only').checked) renderResults();
 }
 function empty(key, description) { const box = element('div', undefined, 'empty'); box.append(element('span', '{ }', 'empty-icon'), element('strong', t(key))); if (description) box.append(element('p', t(description))); return box; }
 function renderResults() {
   $('findings').replaceChildren(); $('coverage').replaceChildren();
   if (!result) { $('result-count').textContent = '—'; $('findings').append(empty('empty', 'intro')); return; }
-  const query = $('search').value.toLowerCase(), priority = $('priority').value;
-  const visible = result.findings.filter(f => (!priority || f.priority === priority) && [f.path, f.rule, f.context, t(f.category), f.note].join(' ').toLowerCase().includes(query));
-  visible.sort((a,b) => ({high:0,medium:1,info:2}[a.priority] - {high:0,medium:1,info:2}[b.priority]) || a.path.localeCompare(b.path) || a.line - b.line);
+  const visible = filterFindings(result,{query:$('search').value,priority:$('priority').value,status:$('status-filter').value,category:$('category').value,mode:$('mode').value,baseline:$('change-filter').value,path:$('file-only').checked ? files[active]?.path : ''},t);
   $('result-count').textContent = visible.length + ' / ' + result.findings.length;
   for (const f of visible) {
     const button = element('button', undefined, 'finding' + (selected === f ? ' selected' : ''));
     const top = element('span', undefined, 'finding-top'); top.append(element('span', t(f.priority), 'badge ' + f.priority), element('span', t(f.mode)));
+    if (f.baseline_state) top.append(element('span', t(f.baseline_state), 'change-badge ' + f.baseline_state));
     button.append(top, element('strong', t(f.category), 'finding-title'), element('span', f.path + ':' + f.line + ' · ' + t(f.status), 'finding-path'));
     button.onclick = () => {
       selected = f; const index = files.findIndex(file => file.path === f.path); if (index >= 0) choose(index);
@@ -80,6 +91,7 @@ function renderResults() {
   }
   if (!visible.length) $('findings').append(empty(result.findings.length ? 'noFiltered' : 'noResults'));
   for (const n of result.notes) $('coverage').append(element('li', n.path + (n.line ? ':' + n.line : '') + ' — ' + t(n.code)));
+  for (const file of result.files) $('coverage').append(element('li', file.path + ' — ' + (file.reason ? t(file.reason) : t(file.complete ? 'complete' : 'incompleteFile'))));
 }
 function renderDetail() {
   $('detail-content').replaceChildren(); $('review-form').hidden = !selected; $('copy').disabled = !selected;
@@ -95,15 +107,40 @@ function renderDetail() {
     evidence.append(element('p', t('unverified'), 'subtle'));
   } else evidence.append(element('p', t('evidenceMissing')));
   container.append(evidence, element('pre', f.context, 'code-context'), element('p', t(f.mode === 'pattern' ? 'patternFix' : f.category + 'Fix')));
-  $('review-status').value = f.status; $('review-note').value = f.note;
+  if (f.context_truncated || f.evidence_truncated) container.append(element('p',t('excerptTruncated'),'coverage-warning'));
+  const draft = drafts.get(f.id);
+  $('review-status').value = draft?.status || f.status; $('review-note').value = draft?.note ?? f.note;
 }
+function renderInventory() {
+  $('inventory-list').replaceChildren(); $('inventory-count').textContent = String(importInventory.length);
+  for (const item of importInventory.slice(0,100)) $('inventory-list').append(element('li',item.path + ' — ' + t(item.reason)));
+  if (importInventory.length > 100) $('inventory-list').append(element('li',t('moreItems') + ' (' + (importInventory.length - 100) + ')'));
+  $('inventory').hidden = !importInventory.length;
+}
+function renderBaseline() {
+  $('baseline-summary').replaceChildren(); $('missing-list').replaceChildren();
+  $('clear-baseline').disabled = !baseline; $('change-filter').disabled = !baseline;
+  if (!baseline) { $('baseline-summary').append(element('p',t('baselineEmpty'),'subtle')); return; }
+  $('baseline-summary').append(element('p', baseline.created_at + ' · ' + baseline.findings.length + ' ' + t('counts'), 'subtle'));
+  if (!result?.comparison) { $('baseline-summary').append(element('p',t('baselineReady'),'subtle')); return; }
+  const c = result.comparison;
+  const stats = element('div',undefined,'comparison-stats');
+  for (const [key,count] of [['new',c.new],['unchanged',c.unchanged],['notObserved',c.not_observed.length]]) stats.append(element('span',t(key) + ' · ' + count));
+  $('baseline-summary').append(stats);
+  if (c.scope_changed) $('baseline-summary').append(element('p',t('scopeChanged'),'coverage-warning'));
+  if (c.current_incomplete) $('baseline-summary').append(element('p',t('currentIncomplete'),'coverage-warning'));
+  for (const f of c.not_observed.slice(0,100)) $('missing-list').append(element('li',f.path + ':' + f.line + ' · ' + f.rule + ' — ' + t(f.reason)));
+  if (c.not_observed.length > 100) $('missing-list').append(element('li',t('moreItems')));
+}
+function applyBaseline() { clearComparison(result); if (result && baseline) compareBaseline(result,baseline); renderBaseline(); renderResults(); }
 function localize() {
   document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
   document.title = 'XSS Audit Studio | ' + t('title');
   document.querySelectorAll('[data-i18n]').forEach(node => node.textContent = t(node.dataset.i18n));
   document.querySelectorAll('[data-placeholder]').forEach(node => node.placeholder = t(node.dataset.placeholder));
-  for (const [id,key] of [['filename','fileName'],['code','editor'],['search','search'],['priority','all'],['review-note','notes'],['review-status','status']]) $(id).setAttribute('aria-label', t(key));
-  announce(statusKey); renderResults(); renderDetail(); metrics();
+  for (const [id,key] of [['filename','fileName'],['code','editor'],['search','search'],['priority','all'],['review-note','notes'],['review-status','status'],['status-filter','allStatuses'],['category','allCategories'],['mode','allModes'],['change-filter','allChanges'],['sample-kind','sampleKind']]) $(id).setAttribute('aria-label', t(key));
+  $('metrics').setAttribute('aria-label',t('overview')); $('analyze').title = t('shortcut');
+  announce(statusKey); renderResults(); renderDetail(); metrics(); renderInventory(); renderBaseline();
 }
 $('language').onchange = () => { language = $('language').value; localize(); };
 $('code').oninput = () => { if (!files[active]) return; files[active].content = $('code').value; updateGutter(); invalidate(); };
@@ -111,7 +148,7 @@ $('code').onscroll = () => $('gutter').scrollTop = $('code').scrollTop;
 $('code').onkeyup = updateGutter; $('code').onclick = updateGutter;
 $('filename').onchange = () => {
   const previous = files[active].path, value = $('filename').value.trim();
-  if (!value || files.some((f,i) => i !== active && f.path === value)) { $('filename').value = previous; announce('invalidFile'); return; }
+  try { validateFiles(files.map((f,i)=>i === active ? {...f,path:value} : f)); } catch { $('filename').value = previous; announce('invalidFile'); return; }
   files[active].path = value; invalidate(); renderFiles(); choose(active);
 };
 $('add').onclick = () => {
@@ -120,42 +157,52 @@ $('add').onclick = () => {
   files.push({path:'review-' + n + '.ts',content:''}); invalidate('ready'); choose(files.length - 1); $('code').focus();
 };
 $('remove').onclick = () => { files.splice(active, 1); invalidate('ready'); choose(Math.max(0, active - 1)); };
-$('reset').onclick = () => { if (!files.some(f => f.content) || confirm(t('resetConfirm'))) { files = [{path:'review.ts',content:''}]; invalidate('ready'); choose(0); } };
+$('reset').onclick = () => { if (!files.some(f => f.content) || confirm(t('resetConfirm'))) { files = [{path:'review.ts',content:''}]; baseline = null; baselineVersion++; importInventory = []; resetFilters(); invalidate('ready'); choose(0); renderInventory(); } };
 $('sample').onclick = () => {
   if (files.some(f => f.content) && !confirm(t('resetConfirm'))) return;
-  files = structuredClone(sample); invalidate('ready'); choose(0);
+  files = structuredClone($('sample-kind').value === 'components' ? componentSample : sample); baseline = null; baselineVersion++; importInventory = []; resetFilters(); invalidate('ready'); choose(0); renderInventory();
 };
 $('import').onclick = () => $('upload').click();
-$('upload').onchange = async () => {
-  const uploaded = [...$('upload').files]; $('upload').value = ''; if (!uploaded.length) return;
+$('folder').onclick = () => $('folder-upload').click();
+async function readUpload(input, directory) {
+  const uploaded = [...input.files]; input.value = ''; if (!uploaded.length) return;
+  if (directory && files.some(f=>f.content) && !confirm(t('resetConfirm'))) return;
+  const version = ++projectVersion;
+  cancelWorker(); announce('importing');
   try {
-    let next = files.filter(f => f.content || f.path !== 'review.ts');
-    if (uploaded.length + next.length > 100) throw Error('fileCount');
-    let total = next.reduce((n,f) => n + new TextEncoder().encode(f.content).length, 0);
-    for (const f of uploaded) {
-      if (f.size > 262144) throw Error('fileSize'); total += f.size; if (total > 5242880) throw Error('totalSize');
-      let content; try { content = new TextDecoder('utf-8',{fatal:true}).decode(await f.arrayBuffer()); } catch { throw Error('decode'); }
-      next.push({path:f.webkitRelativePath || f.name,content});
-    }
-    validateFiles(next); files = next; invalidate('ready'); choose(0);
-  } catch (error) { announce(translate(language,error.message) === error.message ? 'importFailed' : error.message); }
-};
+    const existing = directory ? [] : files.filter(f => f.content || f.path !== 'review.ts');
+    const imported = await importSources(uploaded, existing, {directory, scope:readScope()});
+    if (projectVersion !== version) return;
+    files = imported.files; importInventory = directory ? imported.skipped : [...importInventory,...imported.skipped].slice(-5000);
+    if (directory) resetFilters();
+    invalidate('importDone'); choose(0); renderInventory();
+  } catch (error) { if (projectVersion === version) announce(translate(language,error.message) === error.message ? 'importFailed' : error.message); }
+}
+$('upload').onchange = () => readUpload($('upload'),false);
+$('folder-upload').onchange = () => readUpload($('folder-upload'),true);
+$('include').oninput = () => invalidate(); $('exclude').oninput = () => invalidate();
 $('analyze').onclick = () => {
-  try { validateFiles(files); if (!files.some(f => f.content.trim())) throw Error('emptyFile'); } catch(error) { announce(error.message); return; }
+  let scope;
+  try { validateFiles(files); scope = readScope(); if (!files.some(f => f.content.trim())) throw Error('emptyFile'); } catch(error) { announce(translate(language,error.message) === error.message ? 'invalidFile' : error.message); return; }
   invalidate('running');
   $('analyze').disabled = true; $('cancel').hidden = false;
   try {
     stopAnalysis = startAnalysis(files, {
-      result(value) { cancelWorker(); result = value; restoreReviews(); announce(result.incomplete ? 'partial' : 'done'); renderResults(); renderDetail(); metrics(); },
+      result(value) { cancelWorker(); result = value; result.import_inventory = structuredClone(importInventory); restoreReviews(); applyBaseline(); announce(result.incomplete ? 'partial' : 'done'); renderResults(); renderDetail(); renderFiles(); metrics(); },
       error(key) { cancelWorker(); announce(translate(language,key) === key ? 'workerError' : key); }
-    });
+    }, {scope});
   } catch { cancelWorker(); announce('workerError'); }
 };
 $('cancel').onclick = () => { cancelWorker(); announce('cancelled'); };
-$('search').oninput = renderResults; $('priority').onchange = renderResults;
+$('search').oninput = renderResults;
+for (const id of ['priority','status-filter','category','mode','change-filter','file-only']) $(id).onchange = renderResults;
+function resetFilters() { $('search').value = ''; for (const id of ['priority','status-filter','category','mode','change-filter']) $(id).value = ''; $('file-only').checked = false; renderResults(); }
+$('reset-filters').onclick = resetFilters;
+for (const id of ['review-status','review-note']) $(id).oninput = () => { if (selected) { drafts.set(selected.id,{status:$('review-status').value,note:$('review-note').value}); announce('draft'); } };
 $('save').onclick = () => {
   if (!selected) return;
   selected.status = $('review-status').value; selected.note = $('review-note').value.slice(0,2000);
+  drafts.delete(selected.id);
   let saved = reviews(); saved[selected.id] = {status:selected.status,note:selected.note,at:Date.now()};
   saved = Object.fromEntries(Object.entries(saved).filter(([,v]) => v && typeof v.at === 'number').sort((a,b) => b[1].at-a[1].at).slice(0,500));
   try { localStorage.setItem(REVIEW_KEY,JSON.stringify(saved)); announce('saved'); } catch { announce('storageFailed'); }
@@ -165,19 +212,38 @@ $('clear').onclick = () => {
   if (!confirm(t('confirmClear'))) return;
   try { localStorage.removeItem(REVIEW_KEY); } catch { announce('storageFailed'); return; }
   for (const f of result?.findings || []) { f.status='pending'; f.note=''; }
+  drafts.clear();
   renderResults(); renderDetail(); metrics(); announce('clearDone');
 };
-$('copy').onclick = async () => {
-  if (!selected) return;
-  const text = signalText(selected,language);
+async function copyText(text) {
   try { await navigator.clipboard.writeText(text); announce('copied'); }
   catch { $('copy-fallback').value = text; $('copy-dialog').showModal(); $('copy-fallback').select(); }
-};
+}
+$('copy').onclick = () => { if (selected) copyText(signalText(selected,language)); };
+$('copy-all').onclick = () => { if (result) copyText(reportText(result,language)); };
 $('close-dialog').onclick = () => $('copy-dialog').close();
+$('use-baseline').onclick = () => {
+  try { baseline = validateBaseline(result); baselineVersion++; applyBaseline(); announce('baselineReady'); } catch { announce('invalidBaseline'); }
+};
+$('load-baseline').onclick = () => $('baseline-upload').click();
+$('baseline-upload').onchange = async () => {
+  const file = $('baseline-upload').files[0]; $('baseline-upload').value = ''; if (!file) return;
+  const version = ++baselineVersion;
+  try {
+    if (file.size > BASELINE_BYTES) throw Error('baselineSize');
+    let text; try { text = new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer()); } catch { throw Error('invalidBaseline'); }
+    const loaded = parseBaseline(text);
+    if (baselineVersion !== version) return;
+    baseline = loaded; applyBaseline(); announce('baselineReady');
+  } catch (error) { if (baselineVersion === version) announce(error.message === 'baselineSize' ? 'baselineSize' : 'invalidBaseline'); }
+};
+$('clear-baseline').onclick = () => { baseline = null; baselineVersion++; $('change-filter').value = ''; applyBaseline(); announce('baselineCleared'); };
 document.querySelectorAll('[data-format]').forEach(button => button.onclick = () => {
   if (!result) { announce('reportUnavailable'); return; }
   const output = exportReport(result,language,button.dataset.format);
   const url = URL.createObjectURL(new Blob([output.text],{type:output.type + ';charset=utf-8'}));
   const link = element('a'); link.href = url; link.download = 'xss-review-' + new Date().toISOString().replace(/[:.]/g,'-') + '.' + output.extension; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),1000);
 });
+$('include').value = DEFAULT_SCOPE.include.join('\n'); $('exclude').value = DEFAULT_SCOPE.exclude.join('\n');
+document.addEventListener('keydown', event=>{ if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !$('analyze').disabled && !$('copy-dialog').open) { event.preventDefault(); $('analyze').click(); } });
 choose(0); localize();

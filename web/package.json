@@ -1,6 +1,6 @@
 {
   "name": "xss-audit-studio-web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,14 @@
     "preview": "node scripts/serve.mjs",
     "test": "node --test tests/*.test.mjs"
   },
-  "dependencies": {"@babel/parser": "8.0.8"},
-  "devDependencies": {"esbuild": "0.28.2"},
-  "engines": {"node": ">=22.18.0"}
+  "dependencies": {
+    "@babel/parser": "8.0.8",
+    "parse5": "8.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "engines": {
+    "node": "^22.18.0 || >=24.11.0"
+  }
 }

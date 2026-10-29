@@ -13,7 +13,7 @@
 
 # XSS Audit Desktop
 
-新增[浏览器工作台](web/README.md#中文)：本地分析 JS／TS／JSX／TSX，查看证据、保存人工复核并导出 JSON／Markdown／离线 HTML。可构建为静态网站，覆盖范围与桌面版不同。[WorkBuddy 发布交接](web/WORKBUDDY.md)。目前尚未发布公开网页链接。
+**[直接体验网页版](https://xss-audit-studio.app.workbuddy.host/?sharecode=JHJQZE62LQ)**：WorkBuddy 公开预览已于 2026-10-29 实际打开并跑通基础样例，部署来源为 0.1.0。[网页 0.2.0](https://github.com/Serennity007/xss-audit-desktop/releases/tag/web-v0.2.0) 新增目录导入、项目范围设置、HTML／Vue／Svelte 有限脚本审查、组合筛选、版本对比和五种报告。新版仍需在 WorkBuddy 单独重新发布，GitHub 发布不会自动更新网站。[网页说明](web/README.md#中文) · [发布交接](web/WORKBUDDY.md) · [网页更新](web/CHANGELOG.md)。网页与桌面覆盖不同。
 
 源码新增：桌面与 CLI 已支持基线对比，区分新增、持续出现和本次未再观察到的线索，见[使用说明](docs/USAGE.zh-CN.md#扫描基线对比未发布源码功能)。此改动尚未包含在已发布的 v0.3.0 EXE 中。后续扩展及验收条件见[优化路线](docs/ROADMAP.md#中文)。
 

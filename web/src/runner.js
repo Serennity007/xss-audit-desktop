@@ -1,6 +1,7 @@
+import { VERSION } from './version.js';
 // One disposable Worker per run. Stopped jobs cannot publish late results.
 export function startAnalysis(files, handlers, options = {}) {
-  const createWorker = options.createWorker || (() => new Worker(new URL('worker.js', import.meta.url), { type:'module' }));
+  const createWorker = options.createWorker || (() => new Worker(new URL('worker.js?v=' + VERSION, import.meta.url), { type:'module' }));
   const schedule = options.schedule || setTimeout;
   const unschedule = options.unschedule || clearTimeout;
   let running = true, timer;
@@ -13,6 +14,7 @@ export function startAnalysis(files, handlers, options = {}) {
   };
   worker.onerror = () => { if (running) { cancel(); handlers.error('workerError'); } };
   timer = schedule(() => { if (running) { cancel(); handlers.error('timeout'); } },10000);
-  worker.postMessage({files:structuredClone(files)});
+  try { worker.postMessage({files:structuredClone(files), scope:options.scope}); }
+  catch { cancel(); throw Error('workerError'); }
   return cancel;
 }
