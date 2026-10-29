@@ -1,0 +1,13 @@
+{
+  "web_version": "0.2.0",
+  "source_commit": "ea99e8ee42062411cc9f4bbe435a7c626e1d407a",
+  "files": {
+    "LICENSE.txt": "63588e25c2aaf80d243040279b8889002547c8cbee13307203dbe302c8a3096a",
+    "NOTICE.txt": "fb8bd467b08a5569704c39e63544d46d6bf1b4021f428b2475c4fce03d3a07aa",
+    "THIRD-PARTY-NOTICES.txt": "8ca5ca0a62f79c4476c325451edbb8824b8d53473fc76552304311c294a4797a",
+    "app.js": "06394813869a2c43d42ba4dbbcff90702d3c2712e3671734e0b32a4904ca04ac",
+    "index.html": "90dcef5ce7404c8a7a249ae582838e748a62d1009549cbd0921423c330779862",
+    "style.css": "338bc4452fa0d224e5e9ea9cb1f7510152de68b9cd3f7d3ff793567a6b99d3eb",
+    "worker.js": "f003e38cd2eb39fac71c2351495d868aa6334ac812035b6db8bcecb2e23431b2"
+  }
+}
