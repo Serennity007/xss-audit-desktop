@@ -1,0 +1,24 @@
+import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { zipSync } from 'fflate';
+import { VERSION } from '../src/version.js';
+
+const root=fileURLToPath(new URL('../..',import.meta.url));
+const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
+if (git(['status','--porcelain'])) throw Error('Commit the verified source before packaging its release.');
+const names=['index.html','app.js','worker.js','style.css','LICENSE.txt','NOTICE.txt','THIRD-PARTY-NOTICES.txt'];
+if (JSON.stringify((await readdir(join(root,'web/dist'))).sort())!==JSON.stringify([...names].sort())) throw Error('Unexpected static build files');
+const files={};
+for (const name of names) files[name]=new Uint8Array(await readFile(join(root,'web/dist',name)));
+if (!new TextDecoder().decode(files['index.html']).includes(`app.js?v=${VERSION}`)) throw Error('Build version does not match source');
+const output=join(root,'release','web-v'+VERSION);await mkdir(output,{recursive:true});
+const webName=`XSS-Audit-Studio-web-${VERSION}.zip`, sourceName=`XSS-Audit-Studio-source-${git(['rev-parse','--short=7','HEAD'])}.zip`;
+await writeFile(join(output,webName),zipSync(files,{level:6}));
+execFileSync('git',['archive','--format=zip','--output',join(output,sourceName),'HEAD'],{cwd:root});
+const sums=[];
+for (const name of [webName,sourceName]) sums.push(createHash('sha256').update(await readFile(join(output,name))).digest('hex')+'  '+name);
+await writeFile(join(output,'SHA256SUMS-web.txt'),sums.join('\n')+'\n');
+console.log(JSON.stringify({version:VERSION,commit:git(['rev-parse','HEAD']),assets:[webName,sourceName,'SHA256SUMS-web.txt']},null,2));

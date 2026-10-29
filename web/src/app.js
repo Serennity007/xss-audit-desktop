@@ -2,11 +2,13 @@ import { sample, componentSample } from './sample.js';
 import { validateFiles } from './inputs.js';
 import { translate } from './i18n.js';
 import { signalText, reportText, exportReport } from './reports.js';
-import { startAnalysis } from './runner.js';
+import { startAnalysis, startArchiveImport } from './runner.js';
 import { DEFAULT_SCOPE, validateScope } from './scope.js';
 import { importSources } from './imports.js';
 import { BASELINE_BYTES, validateBaseline, parseBaseline, compareBaseline, clearComparison } from './baseline.js';
 import { filterFindings } from './filters.js';
+import { ZIP_BYTES } from './archive-limits.js';
+import { SNAPSHOT_BYTES, parseSnapshot, exportSnapshot, searchSources, applyReviewBatch } from './project.js';
 
 const $ = id => document.getElementById(id);
 const REVIEW_KEY = 'xss-audit-studio.reviews.v1';
@@ -15,11 +17,12 @@ let language = 'zh', files = [{ path:'review.ts', content:'' }], active = 0;
 let result = null, selected = null, stopAnalysis = null, statusKey = 'ready';
 let baseline = null, projectVersion = 0, baselineVersion = 0, importInventory = [];
 const drafts = new Map();
+let projectReviews = new Map(), visibleSignals = [], searchTimer;
 const t = key => translate(language, key);
 function element(tag, text, className) { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (className) node.className = className; return node; }
 function announce(key) { statusKey = key; $('status').textContent = t(key); }
 function cancelWorker() { if (stopAnalysis) stopAnalysis(); stopAnalysis = null; $('cancel').hidden = true; $('analyze').disabled = false; }
-function invalidate(key = 'stale') { projectVersion++; drafts.clear(); cancelWorker(); result = null; selected = null; announce(key); renderResults(); renderDetail(); metrics(); renderBaseline(); renderFiles(); }
+function invalidate(key = 'stale') { projectVersion++; drafts.clear(); cancelWorker(); result = null; selected = null; announce(key); renderResults(); renderDetail(); metrics(); renderBaseline(); renderFiles(); scheduleSourceSearch(); }
 function readScope() { return validateScope({include:$('include').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean), exclude:$('exclude').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}); }
 function reviews() {
   try {
@@ -32,8 +35,8 @@ function reviews() {
 function restoreReviews() {
   const saved = reviews();
   for (const f of result.findings) {
-    const record = saved[f.id];
-    if (record && statuses.has(record.status) && typeof record.note === 'string') { f.status = record.status; f.note = record.note.slice(0, 2000); }
+    const record = projectReviews.get(f.id) || saved[f.id];
+    if (record && statuses.has(record.status) && typeof record.note === 'string') { f.status = record.status; f.note = record.note.slice(0, 2000); f.review_origin = record.origin === 'snapshot' ? 'snapshot' : 'manual'; }
   }
 }
 function metrics() {
@@ -44,6 +47,7 @@ function metrics() {
   document.querySelectorAll('[data-format]').forEach(b => b.disabled = !result);
   $('copy-all').disabled = !result;
   $('use-baseline').disabled = !result || result.incomplete;
+  $('save-project').disabled = !files.length;
 }
 function renderFiles() {
   $('file-list').replaceChildren(); $('file-count').textContent = String(files.length).padStart(2, '0');
@@ -72,8 +76,9 @@ function choose(index) {
 function empty(key, description) { const box = element('div', undefined, 'empty'); box.append(element('span', '{ }', 'empty-icon'), element('strong', t(key))); if (description) box.append(element('p', t(description))); return box; }
 function renderResults() {
   $('findings').replaceChildren(); $('coverage').replaceChildren();
-  if (!result) { $('result-count').textContent = '—'; $('findings').append(empty('empty', 'intro')); return; }
+  if (!result) { visibleSignals=[]; $('batch-count').textContent='0'; $('batch-apply').disabled=true; $('result-count').textContent = '—'; $('findings').append(empty('empty', 'intro')); return; }
   const visible = filterFindings(result,{query:$('search').value,priority:$('priority').value,status:$('status-filter').value,category:$('category').value,mode:$('mode').value,baseline:$('change-filter').value,path:$('file-only').checked ? files[active]?.path : ''},t);
+  visibleSignals=visible; $('batch-count').textContent=String(visible.length); $('batch-apply').disabled=!visible.length;
   $('result-count').textContent = visible.length + ' / ' + result.findings.length;
   for (const f of visible) {
     const button = element('button', undefined, 'finding' + (selected === f ? ' selected' : ''));
@@ -108,6 +113,7 @@ function renderDetail() {
   } else evidence.append(element('p', t('evidenceMissing')));
   container.append(evidence, element('pre', f.context, 'code-context'), element('p', t(f.mode === 'pattern' ? 'patternFix' : f.category + 'Fix')));
   if (f.context_truncated || f.evidence_truncated) container.append(element('p',t('excerptTruncated'),'coverage-warning'));
+  if (f.review_origin==='snapshot') container.append(element('p',t('importedReview'),'coverage-warning'));
   const draft = drafts.get(f.id);
   $('review-status').value = draft?.status || f.status; $('review-note').value = draft?.note ?? f.note;
 }
@@ -132,15 +138,50 @@ function renderBaseline() {
   for (const f of c.not_observed.slice(0,100)) $('missing-list').append(element('li',f.path + ':' + f.line + ' · ' + f.rule + ' — ' + t(f.reason)));
   if (c.not_observed.length > 100) $('missing-list').append(element('li',t('moreItems')));
 }
+function scheduleSourceSearch() { clearTimeout(searchTimer); searchTimer=setTimeout(renderSourceSearch,150); }
+function renderSourceSearch() {
+  clearTimeout(searchTimer); $('source-matches').replaceChildren();
+  const found=searchSources(files,$('source-query').value,{caseSensitive:$('source-case').checked});
+  $('source-count').textContent=found.matches.length+(found.truncated ? '+' : '')+' '+t('sourceRows');
+  for (const hit of found.matches) {
+    const button=element('button',undefined,'source-hit');
+    button.append(element('strong',hit.path+':'+hit.line+':'+hit.column),element('code',hit.excerpt));
+    button.onclick=()=>{
+      const index=files.findIndex(f=>f.path===hit.path); if (index<0) return;
+      choose(index); selected=null; renderDetail(); renderResults();
+      const start=files[index].content.split('\n').slice(0,hit.line-1).reduce((n,line)=>n+line.length+1,0)+hit.column-1;
+      $('code').focus(); $('code').setSelectionRange(start,start+hit.length);
+      $('code').scrollTop=Math.max(0,(hit.line-5)*22.8); updateGutter();
+    };
+    $('source-matches').append(button);
+  }
+  if (found.truncated) $('source-matches').append(element('p',t('searchTruncated'),'coverage-warning'));
+}
+function persistReviewEntries(entries) {
+  let saved=reviews();
+  for (const f of entries) {
+    const value={status:f.status,note:f.note,origin:f.review_origin || 'manual',at:Date.now()};
+    projectReviews.delete(f.id); projectReviews.set(f.id,value); saved[f.id]=value;
+  }
+  while (projectReviews.size>2000) projectReviews.delete(projectReviews.keys().next().value);
+  saved=Object.fromEntries(Object.entries(saved).filter(([,v])=>v && typeof v.at==='number').sort((a,b)=>b[1].at-a[1].at).slice(0,500));
+  try { localStorage.setItem(REVIEW_KEY,JSON.stringify(saved)); announce('saved'); } catch { announce('storageFailed'); }
+}
+function downloadText(text,type,filename) {
+  const url=URL.createObjectURL(new Blob([text],{type:type+';charset=utf-8'})), link=element('a');
+  link.href=url; link.download=filename; document.body.append(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+const filenameTime=()=>new Date().toISOString().replace(/[:.]/g,'-');
+const announceError=error=>announce(translate(language,error.message)===error.message ? 'importFailed' : error.message);
 function applyBaseline() { clearComparison(result); if (result && baseline) compareBaseline(result,baseline); renderBaseline(); renderResults(); }
 function localize() {
   document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
   document.title = 'XSS Audit Studio | ' + t('title');
-  document.querySelectorAll('[data-i18n]').forEach(node => node.textContent = t(node.dataset.i18n));
-  document.querySelectorAll('[data-placeholder]').forEach(node => node.placeholder = t(node.dataset.placeholder));
-  for (const [id,key] of [['filename','fileName'],['code','editor'],['search','search'],['priority','all'],['review-note','notes'],['review-status','status'],['status-filter','allStatuses'],['category','allCategories'],['mode','allModes'],['change-filter','allChanges'],['sample-kind','sampleKind']]) $(id).setAttribute('aria-label', t(key));
+  document.querySelectorAll('[data-i18n]').forEach(node => node.textContent = t(node.getAttribute('data-i18n')));
+  document.querySelectorAll('[data-placeholder]').forEach(node => node.placeholder = t(node.getAttribute('data-placeholder')));
+  for (const [id,key] of [['filename','fileName'],['code','editor'],['search','search'],['source-query','sourceSearch'],['batch-status','batchStatus'],['priority','all'],['review-note','notes'],['review-status','status'],['status-filter','allStatuses'],['category','allCategories'],['mode','allModes'],['change-filter','allChanges'],['sample-kind','sampleKind']]) $(id).setAttribute('aria-label', t(key));
   $('metrics').setAttribute('aria-label',t('overview')); $('analyze').title = t('shortcut');
-  announce(statusKey); renderResults(); renderDetail(); metrics(); renderInventory(); renderBaseline();
+  announce(statusKey); renderResults(); renderDetail(); metrics(); renderInventory(); renderBaseline(); renderSourceSearch();
 }
 $('language').onchange = () => { language = $('language').value; localize(); };
 $('code').oninput = () => { if (!files[active]) return; files[active].content = $('code').value; updateGutter(); invalidate(); };
@@ -157,10 +198,10 @@ $('add').onclick = () => {
   files.push({path:'review-' + n + '.ts',content:''}); invalidate('ready'); choose(files.length - 1); $('code').focus();
 };
 $('remove').onclick = () => { files.splice(active, 1); invalidate('ready'); choose(Math.max(0, active - 1)); };
-$('reset').onclick = () => { if (!files.some(f => f.content) || confirm(t('resetConfirm'))) { files = [{path:'review.ts',content:''}]; baseline = null; baselineVersion++; importInventory = []; resetFilters(); invalidate('ready'); choose(0); renderInventory(); } };
+$('reset').onclick = () => { if (!files.some(f => f.content) || confirm(t('resetConfirm'))) { files = [{path:'review.ts',content:''}]; projectReviews.clear(); baseline = null; baselineVersion++; importInventory = []; resetFilters(); invalidate('ready'); choose(0); renderInventory(); } };
 $('sample').onclick = () => {
   if (files.some(f => f.content) && !confirm(t('resetConfirm'))) return;
-  files = structuredClone($('sample-kind').value === 'components' ? componentSample : sample); baseline = null; baselineVersion++; importInventory = []; resetFilters(); invalidate('ready'); choose(0); renderInventory();
+  files = structuredClone($('sample-kind').value === 'components' ? componentSample : sample); projectReviews.clear(); baseline = null; baselineVersion++; importInventory = []; resetFilters(); invalidate('ready'); choose(0); renderInventory();
 };
 $('import').onclick = () => $('upload').click();
 $('folder').onclick = () => $('folder-upload').click();
@@ -180,6 +221,53 @@ async function readUpload(input, directory) {
 }
 $('upload').onchange = () => readUpload($('upload'),false);
 $('folder-upload').onchange = () => readUpload($('folder-upload'),true);
+$('zip-import').onclick=()=>$('zip-upload').click();
+$('zip-upload').onchange=async()=>{
+  const file=$('zip-upload').files[0]; $('zip-upload').value=''; if (!file) return;
+  if (files.some(f=>f.content) && !confirm(t('resetConfirm'))) return;
+  cancelWorker(); const version=++projectVersion;
+  try {
+    if (file.size>ZIP_BYTES) throw Error('zipSize');
+    const scope=readScope(), stripRoot=$('strip-root').checked;
+    $('analyze').disabled=true; $('cancel').hidden=false; announce('zipReading');
+    stopAnalysis=()=>{projectVersion++;};
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    if (projectVersion!==version) return;
+    stopAnalysis=startArchiveImport(bytes,{
+      result(imported) {
+        if (projectVersion!==version) return;
+        cancelWorker(); files=imported.files; importInventory=imported.skipped;
+        resetFilters(); invalidate('importDone'); choose(0); renderInventory();
+      },
+      error(key) { if (projectVersion===version) { cancelWorker(); announceError(Error(key)); } }
+    },{scope,stripRoot});
+  } catch(error) { if (projectVersion===version) { cancelWorker(); announceError(error); } }
+};
+$('save-project').onclick=()=>{
+  if (!files.length || !confirm(t('snapshotConfirm'))) return;
+  try {
+    const saved=result ? Object.fromEntries(result.findings.filter(f=>f.status!=='pending' || f.note).map(f=>[f.id,{status:f.status,note:f.note}])) : Object.fromEntries(projectReviews);
+    const text=exportSnapshot(files,readScope(),{reviews:saved,baseline,inventory:importInventory});
+    downloadText(text,'application/json','xss-project-'+filenameTime()+'.json'); announce('snapshotSaved');
+  } catch(error) { announceError(error); }
+};
+$('load-project').onclick=()=>$('project-upload').click();
+$('project-upload').onchange=async()=>{
+  const file=$('project-upload').files[0]; $('project-upload').value=''; if (!file) return;
+  const version=projectVersion, baseVersion=baselineVersion;
+  try {
+    if (file.size>SNAPSHOT_BYTES) throw Error('snapshotSize');
+    let text; try { text=new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer()); } catch { throw Error('snapshotInvalid'); }
+    const loaded=parseSnapshot(text);
+    if (projectVersion!==version || baselineVersion!==baseVersion) return;
+    if (!confirm(t('restoreConfirm'))) return;
+    files=loaded.files; baseline=loaded.baseline; baselineVersion++; importInventory=loaded.inventory;
+    projectReviews=new Map(Object.entries(loaded.reviews).map(([id,r])=>[id,{...r,origin:'snapshot'}]));
+    $('include').value=loaded.scope.include.join('\n'); $('exclude').value=loaded.scope.exclude.join('\n');
+    resetFilters(); invalidate('snapshotLoaded'); choose(0); renderInventory();
+  } catch(error) { if (projectVersion===version) announceError(error); }
+};
+$('source-query').oninput=scheduleSourceSearch; $('source-case').onchange=renderSourceSearch;
 $('include').oninput = () => invalidate(); $('exclude').oninput = () => invalidate();
 $('analyze').onclick = () => {
   let scope;
@@ -193,7 +281,7 @@ $('analyze').onclick = () => {
     }, {scope});
   } catch { cancelWorker(); announce('workerError'); }
 };
-$('cancel').onclick = () => { cancelWorker(); announce('cancelled'); };
+$('cancel').onclick = () => { projectVersion++; cancelWorker(); announce('cancelled'); };
 $('search').oninput = renderResults;
 for (const id of ['priority','status-filter','category','mode','change-filter','file-only']) $(id).onchange = renderResults;
 function resetFilters() { $('search').value = ''; for (const id of ['priority','status-filter','category','mode','change-filter']) $(id).value = ''; $('file-only').checked = false; renderResults(); }
@@ -202,17 +290,25 @@ for (const id of ['review-status','review-note']) $(id).oninput = () => { if (se
 $('save').onclick = () => {
   if (!selected) return;
   selected.status = $('review-status').value; selected.note = $('review-note').value.slice(0,2000);
+  selected.review_origin='manual';
   drafts.delete(selected.id);
-  let saved = reviews(); saved[selected.id] = {status:selected.status,note:selected.note,at:Date.now()};
-  saved = Object.fromEntries(Object.entries(saved).filter(([,v]) => v && typeof v.at === 'number').sort((a,b) => b[1].at-a[1].at).slice(0,500));
-  try { localStorage.setItem(REVIEW_KEY,JSON.stringify(saved)); announce('saved'); } catch { announce('storageFailed'); }
-  renderResults(); metrics();
+  persistReviewEntries([selected]); renderResults(); renderDetail(); metrics();
+};
+$('batch-apply').onclick=()=>{
+  if (!result || !visibleSignals.length) return;
+  const ids=visibleSignals.map(f=>f.id), status=$('batch-status').value;
+  if (!confirm(t('batchConfirm')+'\n'+ids.length+' · '+t(status))) return;
+  try {
+    const changed=applyReviewBatch(result,ids,status);
+    for (const f of changed) drafts.delete(f.id);
+    persistReviewEntries(changed); renderResults(); renderDetail(); metrics();
+  } catch(error) { announceError(error); }
 };
 $('clear').onclick = () => {
   if (!confirm(t('confirmClear'))) return;
   try { localStorage.removeItem(REVIEW_KEY); } catch { announce('storageFailed'); return; }
-  for (const f of result?.findings || []) { f.status='pending'; f.note=''; }
-  drafts.clear();
+  for (const f of result?.findings || []) { f.status='pending'; f.note=''; delete f.review_origin; }
+  drafts.clear(); projectReviews.clear();
   renderResults(); renderDetail(); metrics(); announce('clearDone');
 };
 async function copyText(text) {
@@ -241,8 +337,7 @@ $('clear-baseline').onclick = () => { baseline = null; baselineVersion++; $('cha
 document.querySelectorAll('[data-format]').forEach(button => button.onclick = () => {
   if (!result) { announce('reportUnavailable'); return; }
   const output = exportReport(result,language,button.dataset.format);
-  const url = URL.createObjectURL(new Blob([output.text],{type:output.type + ';charset=utf-8'}));
-  const link = element('a'); link.href = url; link.download = 'xss-review-' + new Date().toISOString().replace(/[:.]/g,'-') + '.' + output.extension; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),1000);
+  downloadText(output.text,output.type,'xss-review-'+filenameTime()+'.'+output.extension);
 });
 $('include').value = DEFAULT_SCOPE.include.join('\n'); $('exclude').value = DEFAULT_SCOPE.exclude.join('\n');
 document.addEventListener('keydown', event=>{ if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !$('analyze').disabled && !$('copy-dialog').open) { event.preventDefault(); $('analyze').click(); } });

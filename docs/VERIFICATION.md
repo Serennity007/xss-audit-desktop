@@ -1,6 +1,8 @@
 # Verification records
 
-Current release: [Windows v0.4.0 verification](verification/v0.4.0-local.json) — 148 regression tests (145 passed, 3 skipped) and 17 frozen-CLI checks; desktop launch and synthetic scan observed. [Public web 0.2.0 deployment](verification/web-0.2.0-public.json) records the independent GitHub Pages build and basic live-browser flow. [Web local verification](verification/web-0.2.0-local.json) covers the broader browser acceptance checks.
+Current browser workbench: [0.3.0 verification](verification/web-0.3.0-local.json) — source checks and built-bundle DOM/Worker integration; native-browser layout/permissions/file pickers were not retested in this run. The earlier public-browser record below remains historical.
+
+Current Windows release: [Windows v0.4.0 verification](verification/v0.4.0-local.json) — 148 regression tests (145 passed, 3 skipped) and 17 frozen-CLI checks; desktop launch and synthetic scan observed. [Public web 0.2.0 deployment](verification/web-0.2.0-public.json) records the independent GitHub Pages build and basic live-browser flow. [Web local verification](verification/web-0.2.0-local.json) covers the broader browser acceptance checks.
 
 当前版本验证：Windows v0.4.0 的 148 项回归检查中 145 通过、3 项因本机符号链接权限跳过，打包 CLI 的 17 项检查通过；桌面已实际启动并扫描合成样例。公开网页独立部署至 GitHub Pages，基本分析与基线对比已实测。以下保留 v0.3.0 原始记录，便于区分版本与验证范围。
 

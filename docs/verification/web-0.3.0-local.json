@@ -1,0 +1,110 @@
+{
+  "observed_date": "2026-10-29",
+  "timezone": "Asia/Shanghai",
+  "workbench_version": "0.3.0",
+  "analysis_engine": "web-ast/0.2.0",
+  "source_base_commit": "5325655902f6c0b0776df17cd4969c32e9ebb0ec",
+  "runtime": {
+    "node": "v24.18.0",
+    "platform": "Windows"
+  },
+  "source_tests": {
+    "command": "npm --prefix web test",
+    "run": 56,
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0
+  },
+  "built_integration": {
+    "command": "npm --prefix web run test:built",
+    "run": 8,
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0,
+    "method": "LinkeDOM with explicit select/selection/dialog/download/storage shims and real Node worker_threads executing the bundled Worker; not a native browser"
+  },
+  "build": {
+    "command": "npm --prefix web run build",
+    "result": "passed"
+  },
+  "checked_behaviors": [
+    "Stored/deflated UTF-8 ZIPs and standard data descriptors",
+    "Unsafe paths, case collisions, links, encryption, truncation, corrupt CRC and dishonest inflation-size rejection",
+    "Scope exclusions preserved without inflating excluded payloads",
+    "ZIP accepted source passes through the actual Worker and analyzer",
+    "Snapshots retain full source, scope, manual notes, skipped paths and an optional baseline",
+    "Restored decisions match only freshly recomputed IDs, retain imported provenance and do not automatically persist",
+    "Source search literal matching, original positions, Unicode prefix offsets, row/excerpt limits",
+    "Batch updates only current filtered identities; stale-ID batches fail before mutation and notes are retained",
+    "Actual application controls use the same underlying analyzer and five export formats",
+    "Cancellation during byte loading and superseded snapshot reads do not replace current source",
+    "Chinese/English controls preserve source state",
+    "HTML report text escaping and review origin in all formats"
+  ],
+  "compatibility": "Workbench version changes; AST semantics/identity version remains 0.2.0. Existing engine 0.2.0 complete baselines and saved decisions remain compatible.",
+  "privacy": "No runtime upload or tracking. Explicit project snapshots contain full source and are not encrypted/signed. Ordinary reports contain bounded excerpts.",
+  "limits": {
+    "zip_compressed_bytes": 20971520,
+    "zip_entries": 5000,
+    "accepted_files": 100,
+    "file_bytes": 262144,
+    "source_total_bytes": 5242880,
+    "snapshot_bytes": 33554432,
+    "worker_timeout_ms": 10000
+  },
+  "not_verified": [
+    "Fresh real-browser interaction with the new controls",
+    "Native file chooser/download behavior, browser permissions, responsive layout and screenshots for the new controls",
+    "All browser engines or operating systems",
+    "Live AI, GitHub online import or complete cross-file analysis (not implemented in this browser release)",
+    "Detection precision/recall or exploitability"
+  ],
+  "desktop": "Windows v0.4.0 runtime and binaries unchanged; Python regression was not repeated for this web-only change.",
+  "source_sha256_lf_normalized": {
+    "web/src/app.js": "b838911a6c3e38454bdd21b2f4b06816080ef212db4b8cabe3c9f75d2df5a9f6",
+    "web/src/archive-limits.js": "ee802692dbc16e4ec8a5bb277395c8e99d2941fd1f53afc2ddb9dcbe61bc10ad",
+    "web/src/archive.js": "d9ab129701f68be12eb0ea3565c177c823192abe71afea371c95713fd83bd543",
+    "web/src/baseline.js": "50cec78be828bdb4f3240f6607db7bc5d0f7fe2fc36e906990392f78a4b25906",
+    "web/src/components.js": "b7a9ec01bd3ba90c8f12a7a2bb0ebf215817bbc8ba5b623368fbad8c3bc03e46",
+    "web/src/engine.js": "93acd62a9480bd04c37327a765ed99edc59c644703e0a83a0826f1af13cbe856",
+    "web/src/filters.js": "0208139fdc8a275964d052e26811bacc021632a02453ba0b5d1a0c5a2cab0daf",
+    "web/src/i18n.js": "68f546036451e9847e4b3b63ba53fdf079566037d53a51f3a646afd5a89d6ca7",
+    "web/src/imports.js": "62e956c54e1dd079dbfd3eaec0418d7785f5b0f59460a7041b75310b92eb95fe",
+    "web/src/inputs.js": "0ab0aa59a676783912663cb55b02732acee31dcc99707b96af430d5dde79ee2a",
+    "web/src/project.js": "0df35d6add810b6f8393b931c4e12447173e322957899915ab7bb05d9841d042",
+    "web/src/reports.js": "10b22e0ff48ca6305546197537d864d9c79fd556485c31d52752cb8c059a2311",
+    "web/src/runner.js": "a8df49d265e16e68b3687915c29e926aa4518da132ea4ba2c1d3bd4a23821b7d",
+    "web/src/sample.js": "e690ee80400b348ecb0648f4cc9170f7433c9b792baa298bc43095f661f5ede1",
+    "web/src/scope.js": "ce386b0bc9ced4e49c72cde752dd37192441392adb1d099a8d0f7c8686653a61",
+    "web/src/version.js": "2bd4feb057afecbb75469c62187d0eb5f52c07ae5ee6dfe08a0f7f8c22fd935e",
+    "web/src/worker.js": "ca762356437d38635512f4c79cb500570cabb94053dee748d173345bc44b01a5",
+    "web/tests/app.test.mjs": "880ba88f1c7c223c3e08bfa46f390ebe6ccad99f3a74ab2fec19228887429673",
+    "web/tests/engine.test.mjs": "b13603baea2eed5c8c493cd5f077f1bd37c5f21f24558f83fee71a83ca5a65a6",
+    "web/tests/project.test.mjs": "27b0089b6edd2ed70d7378015354935f7b8188d0e65f68da0294554076e064e5",
+    "web/tests/runner.test.mjs": "a43e7e231e8661d7096a88eb741e757c784210f4f6f34e6bea3be22401dd7d23",
+    "web/tests/workflow.test.mjs": "e5ed4380e8a3c77a73c1eecb785e60e0e3c891117269968a13afca98248c2f0e",
+    "web/scripts/build.mjs": "f1334c8bf5cf102a43f4daa0c8100f14f820fb7e63d978c27a7121dd6830dcad",
+    "web/scripts/deploy-pages.mjs": "f0ca979434731988cc1337254c8e7d1c945df37cf3686bbe6c724f38afff74a8",
+    "web/scripts/package-release.mjs": "e4c28169710d9959799bc894a0bcad4c6373d2c6ee15dd79392bbe37ce740ba0",
+    "web/scripts/serve.mjs": "3c025cd40be9c70d6b2cdb6223eeacc2feb5248a148f15ba86ec40e049ec9274",
+    "web/scripts/test-built.mjs": "202df2773eafe4f03847973e7c182ee08842be3b83dfb3f2ccb29ff3c9b5ad80",
+    "web/index.html": "90aadab45ba7c1ff9f1fa1402ad79f3e2d11d7a47a1ef8ff198eafb379a839f0",
+    "web/style.css": "168fe39147c2881230bb63f36f1a027ef68f541f97732036206d2e687517f24f",
+    "web/package.json": "364d8158e25acf45acbca4cb58274862ef5c4985d2b26a9072b7d54f412ecd2a",
+    "web/package-lock.json": "bf8ffc9b3126340fd48f41832c478b2f0a53f1482e839f8da937aea9bd7e3918"
+  },
+  "built_sha256": {
+    "app.js": "9424c647b5392aeeaeadf03521c4090107e8de603f39914439f4cda9ace73370",
+    "index.html": "a73d720675b69480f0a5972061ae2c96b7d44ff23f9a66cd8bea1aaa8a509f2b",
+    "LICENSE.txt": "63588e25c2aaf80d243040279b8889002547c8cbee13307203dbe302c8a3096a",
+    "NOTICE.txt": "fb8bd467b08a5569704c39e63544d46d6bf1b4021f428b2475c4fce03d3a07aa",
+    "style.css": "9bb9a8064a3603902186cc8e2f30c295637c3c773b15f17af97bfc62294b8254",
+    "THIRD-PARTY-NOTICES.txt": "a12028dff3929788963b11ca90e0fb1093ae48adfb7415014457222fc563a07d",
+    "worker.js": "ff4db061d1df12d7066b64817e1c88871481ec1f5c19e924f1d7ac0b8a720e2f"
+  },
+  "notice": "Implementation and DOM/Worker checks with inert synthetic examples; not a browser certification or detection-quality benchmark.",
+  "local_http": {
+    "url": "http://127.0.0.1:4178/",
+    "result": "Root and all seven static files served; SHA-256 matches the built assets, versioned UI/Worker paths present. This is not a public experience URL or native-browser check."
+  }
+}

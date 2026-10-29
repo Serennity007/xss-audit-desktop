@@ -2,6 +2,10 @@
 
 Release dates below use Asia/Shanghai. Downloadable binaries remain versioned separately from documentation updates on `main`.
 
+## Browser workbench 0.3.0 · 2026-10-29
+
+- Add offline ZIP projects, explicit full-source snapshots, literal source navigation and filtered manual batch review. Keep AST engine 0.2.0 baseline/review compatibility. See the [browser changelog](web/CHANGELOG.md) and [verification limits](docs/verification/web-0.3.0-local.json). Windows binaries remain v0.4.0.
+
 ## [0.4.0](https://github.com/Serennity007/xss-audit-desktop/releases/tag/v0.4.0) · 2026-10-29
 
 ### Windows desktop and CLI
@@ -46,4 +50,4 @@ First published desktop, CLI and optional AI-review release derived from the ups
 
 ## 中文说明
 
-上方日期按北京时间记录。`main` 中的文档和维护规范更新不代表发布了新的二进制；当前 Windows 软件正式版本为 `v0.4.0`，网页独立版本为 `0.2.0`。可通过对应 Release 查看各版本原始说明、程序与校验文件。
+上方日期按北京时间记录。`main` 中的文档和维护规范更新不代表发布了新的二进制；当前 Windows 软件正式版本为 `v0.4.0`，网页工作台版本为 `0.3.0`（AST 引擎 `0.2.0`）。可通过对应 Release 查看各版本原始说明、程序与校验文件。

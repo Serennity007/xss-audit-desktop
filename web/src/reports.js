@@ -4,6 +4,7 @@ export function signalText(f, language) {
   const t = k => translate(language, k);
   const evidence = f.mode === 'ast' ? [t('source') + ': L' + f.source.line + ' ' + f.source.text, ...f.steps.map(s => t('assignment') + ': L' + s.line + ' ' + s.text), t('sink') + ': L' + f.sink.line + ' ' + f.sink.text, ...(f.sanitized ? [t('sanitized')] : [])] : [t('evidenceMissing')];
   if (f.context_truncated || f.evidence_truncated) evidence.push(t('excerptTruncated'));
+  if (f.review_origin==='snapshot') evidence.push(t('importedReview'));
   return [t(f.category) + ' · ' + f.rule, f.path + ':' + f.line + ':' + f.column, t(f.mode) + ' · ' + t(f.priority), t('status') + ': ' + t(f.status), ...(f.baseline_state ? [t('baseline') + ': ' + t(f.baseline_state)] : []), ...evidence, t('guidance') + ': ' + t(f.mode === 'pattern' ? 'patternFix' : f.category + 'Fix'), f.context, t('notes') + ': ' + f.note].join('\n');
 }
 export function reportText(result, language) {
@@ -21,7 +22,7 @@ function sarifReport(result, language) {
   return {$schema:'https://json.schemastore.org/sarif-2.1.0.json', version:'2.1.0', runs:[{
     tool:{driver:{name:'XSS Audit Studio', version:result.engine.split('/')[1], informationUri:'https://github.com/Serennity007/xss-audit-desktop', rules:rules.map(f => ({id:f.rule, name:f.rule, shortDescription:{text:t(f.category)}, fullDescription:{text:t(f.mode === 'pattern' ? 'patternFix' : f.category + 'Fix')}}))}},
     invocations:[{executionSuccessful:!result.incomplete, toolExecutionNotifications:result.notes.map(n=>({level:'warning', message:{text:n.path + ': ' + t(n.code)}}))}],
-    results:result.findings.map(f=>({ruleId:f.rule, level:f.priority === 'info' ? 'note' : 'warning', message:{text:signalText(f,language)}, locations:[location(f)], partialFingerprints:{'xssAuditIdentity/v2':f.id}, properties:{reviewPriority:f.priority, reviewStatus:f.status, note:f.note, evidenceMode:f.mode, exploitability:'unverified'}, ...(f.baseline_state ? {baselineState:f.baseline_state} : {}), ...(f.mode === 'ast' ? {codeFlows:[{threadFlows:[{locations:[{line:f.source.line, text:f.source.text}, ...f.steps, {line:f.sink.line, text:f.sink.text}].map(s=>({location:{...location(f,s.line,1), message:{text:s.text}}}))}]}]} : {})})),
+    results:result.findings.map(f=>({ruleId:f.rule, level:f.priority === 'info' ? 'note' : 'warning', message:{text:signalText(f,language)}, locations:[location(f)], partialFingerprints:{'xssAuditIdentity/v2':f.id}, properties:{reviewPriority:f.priority, reviewStatus:f.status, reviewOrigin:f.review_origin || null, note:f.note, evidenceMode:f.mode, exploitability:'unverified'}, ...(f.baseline_state ? {baselineState:f.baseline_state} : {}), ...(f.mode === 'ast' ? {codeFlows:[{threadFlows:[{locations:[{line:f.source.line, text:f.source.text}, ...f.steps, {line:f.sink.line, text:f.sink.text}].map(s=>({location:{...location(f,s.line,1), message:{text:s.text}}}))}]}]} : {})})),
     properties:{notice:t('reportNote'), limitations:t('boundary'), scope:result.scope, files:result.files, importInventory:result.import_inventory || [], comparison:result.comparison || null, exportScope:'all-results', sourceExecuted:false}
   }]};
 }
@@ -33,7 +34,7 @@ export function exportReport(result, language, format) {
   if (format === 'csv') {
     const fields = ['record_type','path','line','column','rule','category','priority','mode','status','note','baseline_state','context','metadata_key','metadata_value'];
     const records = result.findings.map(f=>({...f,record_type:'signal'}));
-    for (const [key,value] of [['engine',result.engine], ['created_at',result.created_at], ['notice',t('reportNote')], ['limitations',t('boundary')], ['scope',JSON.stringify(result.scope)], ['coverage',JSON.stringify({incomplete:result.incomplete,files:result.files,notes:result.notes,import_inventory:result.import_inventory})], ['comparison',JSON.stringify(result.comparison || null)]]) records.push({record_type:'metadata',metadata_key:key,metadata_value:value});
+    for (const [key,value] of [['engine',result.engine], ['created_at',result.created_at], ['notice',t('reportNote')], ['limitations',t('boundary')], ['scope',JSON.stringify(result.scope)], ['coverage',JSON.stringify({incomplete:result.incomplete,files:result.files,notes:result.notes,import_inventory:result.import_inventory})], ['comparison',JSON.stringify(result.comparison || null)], ['review_origins',JSON.stringify(result.findings.filter(f=>f.review_origin).map(f=>({path:f.path,line:f.line,column:f.column,origin:f.review_origin})))]]) records.push({record_type:'metadata',metadata_key:key,metadata_value:value});
     const rows = [fields, ...records.map(record=>fields.map(key=>record[key]))];
     return {text:'\uFEFF' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n'), type:'text/csv', extension:'csv'};
   }

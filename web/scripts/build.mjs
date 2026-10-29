@@ -13,7 +13,7 @@ await copyFile('style.css','dist/style.css');
 await copyFile('../LICENSE', 'dist/LICENSE.txt');
 await copyFile('../NOTICE.md', 'dist/NOTICE.txt');
 const notices = [];
-for (const base of [...(await readdir('node_modules/@babel')).map(dir=>'node_modules/@babel/' + dir), 'node_modules/parse5', 'node_modules/entities']) {
+for (const base of [...(await readdir('node_modules/@babel')).map(dir=>'node_modules/@babel/' + dir), 'node_modules/parse5', 'node_modules/entities', 'node_modules/fflate']) {
   const pkg = JSON.parse(await readFile(base + '/package.json', 'utf8'));
   const license = (await readdir(base)).find(name=>/^LICENSE(?:\.txt)?$/i.test(name));
   if (!license) throw Error('Missing license for ' + pkg.name);

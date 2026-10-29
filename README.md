@@ -13,7 +13,7 @@
 
 # XSS Audit Desktop
 
-**[Try the browser workbench](https://serennity007.github.io/xss-audit-desktop/)** — web 0.2.0, independently hosted on GitHub Pages and sample-tested on 2026-10-29. Review source locally in your browser without an account or API key: folder imports, explicit project scope, limited HTML/Vue/Svelte script review, combined triage filters, conservative baselines and five export formats. [Web documentation](web/README.md) · [Browser changes](web/CHANGELOG.md) · [Deployment verification](docs/verification/web-0.2.0-public.json). Browser and desktop coverage differ.
+**[Try the browser workbench](https://serennity007.github.io/xss-audit-desktop/)** — web workbench 0.3.0, independently hosted on GitHub Pages. Review source locally without an account or API key: ZIP/folder imports, downloadable project snapshots, source search, filtered batch review, limited AST evidence, conservative baselines and five export formats. The unchanged AST engine remains 0.2.0. [Web documentation](web/README.md) · [Browser changes](web/CHANGELOG.md) · [Verification and limits](docs/verification/web-0.3.0-local.json). Browser and desktop coverage differ.
 
 Desktop **v0.4.0** includes baseline comparison in the desktop and CLI, distinguishing new, unchanged and no-longer-observed review signals. See the [usage guide](docs/USAGE.en.md#compare-scans). Planned extensions and acceptance conditions are in the [roadmap](docs/ROADMAP.md).
 The same release packages project scan settings, per-file coverage, retained review history, status filtering and additional HTML/Python flow models. See [scan configuration and behavior changes](docs/SCAN-CONFIG.en.md).

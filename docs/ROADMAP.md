@@ -1,14 +1,14 @@
 # Functional roadmap
 
-This is a development sequence, not a claim that the listed capabilities exist. Published Windows binaries are v0.4.0; the browser engine is independently versioned 0.2.0. Scope each increment around a complete, verifiable user task.
+This is a development sequence, not a claim that the listed capabilities exist. Published Windows binaries are v0.4.0; the browser workbench is independently versioned 0.3.0, retaining AST engine 0.2.0. Scope each increment around a complete, verifiable user task.
 
 ## Delivered source and browser increments
 
 Integrated development commits f495a3a, 011f642 and 3eb4908: scan configuration, per-file coverage, review history/status filtering and HTML/Python analysis improvements are packaged in Windows v0.4.0. The paired repository-auditor robustness research harness remains a Python-source entrypoint, without measured live-model research results.
 
-Browser 0.2.0 is live on [GitHub Pages](https://serennity007.github.io/xss-audit-desktop/): folder/multifile import, bounded include/exclude scope and import inventory, local JS/TS AST review, limited HTML/Vue/Svelte inline scripts, combined triage filters, conservative baselines, and JSON/Markdown/HTML/CSV/SARIF exports. Browser and desktop coverage differ. WorkBuddy remains a separately deployed 0.1.0 preview, with an optional handoff; it is not the primary deployment. See web/README.md.
+Browser workbench 0.3.0 (AST 0.2.0) is live on [GitHub Pages](https://serennity007.github.io/xss-audit-desktop/): ZIP/folder/multifile import, full-source project snapshots, literal source navigation, filtered batch review, bounded include/exclude scope and import inventory, local JS/TS AST review, limited HTML/Vue/Svelte inline scripts, combined triage filters, conservative baselines, and JSON/Markdown/HTML/CSV/SARIF exports. Browser and desktop coverage differ. WorkBuddy remains a separately deployed 0.1.0 preview, with an optional handoff; it is not the primary deployment. See web/README.md.
 
-Baseline comparison is available in the desktop and CLI. Export a full JSON report, scan a comparable project snapshot, then compare. Reports preserve new/unchanged identities and locations no longer observed. The desktop has a new-signals view; CLI supports baseline-aware matching gates. Missing signals never automatically become fixed. Identity is based on path, rule and nearby code, not semantic equivalence. See the English and Chinese usage guides for limits.
+Baseline comparison is available in the desktop and CLI. Export a full JSON report, scan a comparable project snapshot, then compare. Reports preserve new/unchanged identities and locations no longer observed. The desktop has a new-signals view; CLI supports baseline-aware matching gates. Missing signals never automatically become fixed. Identity includes path, rule, occurrence and the full source-file digest; it does not establish semantic equivalence. See the English and Chinese usage guides for limits.
 
 ## Next increments
 
@@ -35,9 +35,9 @@ Baseline comparison is available in the desktop and CLI. Export a full JSON repo
 
 ## 中文
 
-本文件是开发顺序，不代表所有功能已实现。公开 Windows 二进制为 v0.4.0，网页独立版本为 0.2.0。
+本文件是开发顺序，不代表所有功能已实现。公开 Windows 二进制为 v0.4.0，网页工作台独立版本为 0.3.0（AST 引擎仍为 0.2.0）。
 
-v0.4.0 已打包桌面、CLI 和四种报告的基线对比、项目配置、覆盖说明及复核历史。基线按路径、规则、线索身份和源文件摘要比较，不证明语义等价，不把未再观察到的线索当成已修复。网页 0.2.0 已上线 GitHub Pages，包含目录导入、范围、有限组件脚本、组合筛选、基线和五种导出；旧 WorkBuddy 0.1.0 预览未改动。科研工具仍从 Python 源码运行，未据此宣称真实模型性能或论文创新。
+v0.4.0 已打包桌面、CLI 和四种报告的基线对比、项目配置、覆盖说明及复核历史。基线按路径、规则、线索身份和源文件摘要比较，不证明语义等价，不把未再观察到的线索当成已修复。网页工作台 0.3.0 已上线 GitHub Pages，保留 0.2.0 AST 引擎，增加 ZIP、源码快照、字面搜索和批量复核，并保留目录导入、范围、有限组件脚本、组合筛选、基线和五种导出；旧 WorkBuddy 0.1.0 预览未改动。科研工具仍从 Python 源码运行，未据此宣称真实模型性能或论文创新。
 
 后续按完整用户流程推进：
 
