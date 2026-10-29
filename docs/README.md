@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | Understand and download the app / 项目与下载 | [Project home](../README.md) | [项目首页](../README.zh-CN.md) |
 | Use the browser workbench / 网页审查工作台 | [Browser guide](../web/README.md) | [网页说明](../web/README.md#中文) |
-| Update WorkBuddy deployment / 更新参赛网站 | [Deployment handoff](../web/WORKBUDDY.md) | [发布交接](../web/WORKBUDDY.md) |
+| Optional WorkBuddy submission deployment / 可选参赛部署 | [Deployment handoff](../web/WORKBUDDY.md) | [发布交接](../web/WORKBUDDY.md) |
 | Configure CLI, imports and AI / 使用与配置 | [Detailed guide](USAGE.en.md) | [详细指南](USAGE.zh-CN.md) |
 | Understand detection limits / 分析边界 | [Analysis boundaries](ANALYSIS.en.md) | [分析边界](ANALYSIS.md) |
 | Understand localization / 语言范围 | [Language coverage](LANGUAGES.md) | [语言范围](LANGUAGES.md) |
@@ -13,10 +13,12 @@
 | Report an application vulnerability / 私密漏洞报告 | [Security policy](../SECURITY.md) | [安全政策](SECURITY.zh-CN.md) |
 | Review release history / 版本变化 | [Changelog](../CHANGELOG.md) | [版本说明](../CHANGELOG.md#中文说明) |
 
+[Open the public browser workbench / 打开公开网页版](https://serennity007.github.io/xss-audit-desktop/) · [Public deployment verification / 部署验证](verification/web-0.2.0-public.json)
+
 ## Project facts / 项目事实
 
 - Maintainer / 维护者：[Serennity007](https://github.com/Serennity007).
-- Current published application / 当前软件正式版：[v0.3.0](https://github.com/Serennity007/xss-audit-desktop/releases/tag/v0.3.0), Windows x64 portable desktop and CLI.
+- Current published application / 当前软件正式版：[v0.4.0](https://github.com/Serennity007/xss-audit-desktop/releases/tag/v0.4.0), Windows x64 portable desktop and CLI.
 - Source requirement / 源码要求：Python 3.11+; the GUI also needs Tkinter.
 - License / 许可：[MIT](../LICENSE), with [upstream attribution](../NOTICE.md) and [parser notices](../THIRD-PARTY-NOTICES.txt).
 

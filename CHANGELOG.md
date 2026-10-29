@@ -2,28 +2,30 @@
 
 Release dates below use Asia/Shanghai. Downloadable binaries remain versioned separately from documentation updates on `main`.
 
-## Unreleased
+## [0.4.0](https://github.com/Serennity007/xss-audit-desktop/releases/tag/v0.4.0) · 2026-10-29
 
-- Add a browser-local bilingual JS/TS/JSX/TSX workbench in web/, with bounded Babel AST evidence, pattern review, disposable analysis Workers, file editing/import, persisted review decisions and three offline report formats. Includes static build and WorkBuddy deployment handoff; no public deployment is claimed.
+### Windows desktop and CLI
 
-- Add desktop baseline comparison and a new-signals view, CLI --baseline / --only-new, and comparison metadata in JSON, Markdown, HTML and SARIF. Missing signals are not classified as fixed; incomplete and filtered baselines are rejected. Available from source; not included in v0.3.0 binaries.
-- Add a repository-auditor robustness research platform: unchanged-source baseline/context pairs, external oracle labels, fixed anchoring/authority/instruction templates and equal-character neutral controls.
-- Add a bounded read-only multi-file agent with literal search, strict JSON actions, exposed-line evidence checks, redacted visible transcripts and explicit budget/error outcomes.
-- Add `xss-audit-research` / `python -m xss_audit.research_cli` preparation, repeated balanced trials, conditional detection/localization/evidence regression metrics, source/context inventory verification and offline HTML/JSON reports.
-- Keep scripted offline demonstrations separate from live model results. Document methodological limits and verified references in [English](docs/ROBUSTNESS.en.md) / [中文](docs/ROBUSTNESS.zh-CN.md). No real-model robustness claim is made by these changes.
+- Package the previously source-only project configuration, per-file coverage, conservative baselines and retained review history in both Windows executables.
+- Add `.xss-audit.toml` include/exclude scope and resource budgets, CLI `--config` / `--allow-partial`, and explicit coverage failures. Strict incomplete scans preserve reports and return 2.
+- Compare complete JSON baselines in the desktop or with CLI `--baseline` / `--only-new`. Distinguish new, unchanged and no-longer-observed signals; missing signals never automatically become fixed. Incomplete/filtered baselines are rejected.
+- Preserve distinct source snapshots and duplicate finding instances in saved review history. Add a desktop review-status filter and invalidate old decisions when full-file evidence changes.
+- Add selected HTML `srcdoc` and jQuery setters, static Python import aliases and context expressions. Locally overridden sanitizer names no longer suppress HTML evidence automatically.
+- Skip marked generated audit reports on subsequent source scans.
+- Identify version 0.4.0 in Windows file properties. Bundle bilingual usage/configuration guides, example configuration, release notes, licenses and inert fixtures.
+- Record 148 local regression checks (145 passed, 3 skipped for Windows symlink permission) and 17 checks of the actual frozen CLI. These verify implementation, not detection precision/recall.
 
-- Add shared `.xss-audit.toml` scan scope, include/exclude globs and resource budgets, with CLI `--config` and `--allow-partial` controls.
-- Record per-file analysis depth and coverage failures in desktop and exported reports. Strict CLI scans return 2 for unreadable/oversized supported source and projects without readable source.
-- Recognize generated JSON/HTML audit reports so repeated scans do not report their own output as application code.
-- Keep review decisions across snapshots and independent windows; separate duplicate finding instances and invalidate decisions when source-file evidence changes. Preserve unambiguous legacy review records.
-- Add a desktop review-status filter.
-- Extend HTML flow evidence to `srcdoc` and direct jQuery HTML setters; resolve static Python import aliases and analyze `with` / `async with` context expressions. Locally overridden sanitizer names no longer suppress HTML evidence.
-- Add focused regressions for scan configuration, repeated exports, coverage policy, review history and the added analyzer models. See [scan configuration](docs/SCAN-CONFIG.en.md) / [扫描配置](docs/SCAN-CONFIG.zh-CN.md).
+### Independently deployed browser workbench
 
-- Refresh the English-default README and Chinese edition with a product banner, download links, a source example and task-oriented navigation.
-- Retain detailed usage in separate English and Chinese guides.
-- Add contribution and security-reporting policies, structured issue forms, a pull-request checklist and a documentation index.
-- Publish a local verification record with actual test outcomes, skipped checks and portable-CLI smoke results. See [verification](docs/VERIFICATION.md).
+- Publish [web 0.2.0 on GitHub Pages](https://serennity007.github.io/xss-audit-desktop/) with a bounded static-only deployment script and a SHA-256 deployment manifest. Basic live-site analysis and baseline comparison were observed.
+- Browser features and limits are versioned separately in the [web changelog](web/CHANGELOG.md). The earlier WorkBuddy deployment was not updated.
+
+### Python-source research tools
+
+- Include a repository-auditor robustness platform: unchanged-source context pairs, external oracle labels, bounded multi-file agent transcripts, strict JSON actions, exposed-line evidence checks, balanced repeated trials and separate detection/localization/evidence regression proxies.
+- Run through `python -m xss_audit.research_cli`; this is not an additional frozen Windows entrypoint. Scripted synthetic demonstrations are separate from live-model results. No measured real-model performance or paper novelty is claimed. See [English](docs/ROBUSTNESS.en.md) / [中文](docs/ROBUSTNESS.zh-CN.md).
+
+Details: [release notes](docs/RELEASE-v0.4.0.md) · [verification](docs/verification/v0.4.0-local.json) · [scan configuration](docs/SCAN-CONFIG.en.md).
 
 ## [0.3.0](https://github.com/Serennity007/xss-audit-desktop/releases/tag/v0.3.0) · 2026-10-26
 
@@ -44,4 +46,4 @@ First published desktop, CLI and optional AI-review release derived from the ups
 
 ## 中文说明
 
-上方日期按北京时间记录。`main` 中的文档和维护规范更新不代表发布了新的二进制；当前软件正式版本仍为 `v0.3.0`。可通过对应 Release 查看各版本原始说明、程序与校验文件。
+上方日期按北京时间记录。`main` 中的文档和维护规范更新不代表发布了新的二进制；当前 Windows 软件正式版本为 `v0.4.0`，网页独立版本为 `0.2.0`。可通过对应 Release 查看各版本原始说明、程序与校验文件。

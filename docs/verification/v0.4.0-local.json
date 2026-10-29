@@ -1,0 +1,153 @@
+{
+  "version": "0.4.0",
+  "packaged_checks": [
+    {
+      "check": "version",
+      "exit_code": 0
+    },
+    {
+      "check": "complete JSON baseline",
+      "exit_code": 0
+    },
+    {
+      "check": "unchanged baseline gate",
+      "exit_code": 0
+    },
+    {
+      "check": "new signal gate",
+      "exit_code": 1
+    },
+    {
+      "check": "project configuration",
+      "exit_code": 0
+    },
+    {
+      "check": "GUI comparable demo baseline",
+      "exit_code": 0
+    },
+    {
+      "check": "en json",
+      "exit_code": 0
+    },
+    {
+      "check": "en markdown",
+      "exit_code": 0
+    },
+    {
+      "check": "en html",
+      "exit_code": 0
+    },
+    {
+      "check": "en sarif",
+      "exit_code": 0
+    },
+    {
+      "check": "zh-CN json",
+      "exit_code": 0
+    },
+    {
+      "check": "zh-CN markdown",
+      "exit_code": 0
+    },
+    {
+      "check": "zh-CN html",
+      "exit_code": 0
+    },
+    {
+      "check": "zh-CN sarif",
+      "exit_code": 0
+    },
+    {
+      "check": "strict incomplete exit",
+      "exit_code": 2
+    },
+    {
+      "check": "explicit partial opt-out",
+      "exit_code": 0
+    },
+    {
+      "check": "existing report is not overwritten",
+      "exit_code": 2
+    }
+  ],
+  "count": 17,
+  "notice": "Frozen CLI engineering checks with inert synthetic source; not a detection-quality benchmark.",
+  "observed_date": "2026-10-29",
+  "timezone": "Asia/Shanghai",
+  "source_base_commit": "ea99e8ee42062411cc9f4bbe435a7c626e1d407a",
+  "environment": {
+    "platform": "Windows 11 x64",
+    "python": "3.11.9",
+    "pyinstaller": "6.22.0"
+  },
+  "regression": {
+    "command": ".venv/Scripts/python.exe -m unittest discover -s tests -v",
+    "run": 148,
+    "passed": 145,
+    "failed": 0,
+    "skipped": 3,
+    "skip_reason": "Windows symbolic-link creation permission unavailable"
+  },
+  "packaged_command": ".venv/Scripts/python.exe scripts/verify_release.py --version 0.4.0",
+  "packaged_demo": {
+    "files": 2,
+    "signals": 11,
+    "high_priority": 9,
+    "languages": [
+      "en",
+      "zh-CN"
+    ],
+    "formats": [
+      "json",
+      "markdown",
+      "html",
+      "sarif"
+    ]
+  },
+  "desktop_observed": [
+    "Actual frozen executable launched with title XSS Audit Desktop · 0.4.0",
+    "Selected inert examples/demo-project and completed scan: 2 files, 11 signals, 9 high-priority, no reported incomplete AST",
+    "Compare-baseline dialog opened; selection was not completed before the UI automation connection became unavailable"
+  ],
+  "windows_file_properties": {
+    "desktop_file_version": "0.4.0",
+    "cli_file_version": "0.4.0",
+    "product_version": "0.4.0"
+  },
+  "not_verified": [
+    "Completion of native GUI baseline picker in this run; CLI baseline behavior and regression tests passed",
+    "Native GUI screenshot capture after UI automation connection became unavailable",
+    "macOS/Linux executables",
+    "All Windows configurations",
+    "Paid/live AI endpoint interoperability",
+    "Detection precision/recall, exploitability or complete cross-file coverage"
+  ],
+  "executable_sha256": {
+    "xss-audit-cli.exe": "ef9291675cdcccc544e7c6362c1063b50ffa605e3db2a2c109e61fc87d099f9d",
+    "XSS-Audit-Desktop.exe": "bab9fa97c914d151c4dc8c2ffa205da6af8d4120928516d051cc709893788ff4"
+  },
+  "runtime_source_sha256": {
+    "xss_audit/__init__.py": "6a378b47ec6586b9518f7e065924ff01412ca6f50afe4e3a5bd715f31865b429",
+    "xss_audit/__main__.py": "482b8693e2fe6dbd732e3d7961e03827d3efa187bad11d29da188be580ebbeea",
+    "xss_audit/agent_audit.py": "356f4a2e903ee6ba667956a2f481fc6ef6e37dfb7966ada47d8eab98022b53a1",
+    "xss_audit/ai.py": "cc98f371342b44adb6803e0e332c940c1317cf2b509985c3555453c96b0165b6",
+    "xss_audit/analysis.py": "24cf3b11168f071c4c1ed2de7b1b30abc08f1fd371e32a927b504ccdd286275e",
+    "xss_audit/audit-playbook.md": "ca482fb494afbf6dadaf0af69f9e74a6de0a10fb6a6f59cfca3af341bf65ea2c",
+    "xss_audit/baseline.py": "ab0776a415fd446fadcbd4522a67fa96c58cadf6e6993a281803a4f4fc824be7",
+    "xss_audit/cli.py": "e156cfde0a1b7f23503b3fe9cc2a366c8b110f9061df01c2053fd61f2a613821",
+    "xss_audit/config.py": "60fc37c0fb7a92d74e4b014bf94e59746c62b4b688f95ce65809f392a336ef40",
+    "xss_audit/gui.py": "fda7dcfa5895bc3b8fd93e5ce738ee3c737ff76a03e66af22e216e44a142f9a3",
+    "xss_audit/i18n.py": "4bca0f44ce8767cd190bab3f0e0590500547729ae1916e6138a94cdbd760b1d3",
+    "xss_audit/importer.py": "ffd4692812f6538cb219c44d95947a3383f43fce342176c95c31d6c421db2d24",
+    "xss_audit/reports.py": "1493dea9b8a81cccc1e07aa42259cf0119a2373c25f33e416015bd8fe765d7f1",
+    "xss_audit/repository.py": "1f340a7e21676c9fdc5aae541dd5feca99d235ee57ad3597ddc5cdff65b494c2",
+    "xss_audit/research_cli.py": "7b00067b212bdc874dcff31b89679cba4a379e447a5ed2bac7d5c1aba3f1194e",
+    "xss_audit/research_model.py": "33182648ee89574878da6975049a28cb9e0cc3eaf1b1969ea523f8c7817751a2",
+    "xss_audit/research_runner.py": "ee58015c776230bdf1676a47d67295fe5f87d010e503668795905de2ccf9b095",
+    "xss_audit/robustness.py": "cc5e84a2dd84a78e21a074ec3d076f69a1873eca3b0a3e996279558d21c422fd",
+    "xss_audit/scanner.py": "41216a78b56c4f93ea9957b24b7529f691005a251e2dc82d34c5522e3223e5ae",
+    "xss_audit/secrets.py": "17c41044b6ca4cb7bcd1296a8bc2410eabdd248ee77901b25ce247e45811b57c",
+    "xss_audit/state.py": "c49db1f31cb51b5a58b51b23d90a3244011b59d17126b0fc3b6f522267eee098",
+    "xss_audit/UPSTREAM-LICENSE.txt": "63588e25c2aaf80d243040279b8889002547c8cbee13307203dbe302c8a3096a"
+  }
+}

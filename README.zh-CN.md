@@ -13,9 +13,9 @@
 
 # XSS Audit Desktop
 
-**[直接体验网页版](https://xss-audit-studio.app.workbuddy.host/?sharecode=JHJQZE62LQ)**：WorkBuddy 公开预览已于 2026-10-29 实际打开并跑通基础样例，部署来源为 0.1.0。[网页 0.2.0](https://github.com/Serennity007/xss-audit-desktop/releases/tag/web-v0.2.0) 新增目录导入、项目范围设置、HTML／Vue／Svelte 有限脚本审查、组合筛选、版本对比和五种报告。新版仍需在 WorkBuddy 单独重新发布，GitHub 发布不会自动更新网站。[网页说明](web/README.md#中文) · [发布交接](web/WORKBUDDY.md) · [网页更新](web/CHANGELOG.md)。网页与桌面覆盖不同。
+**[直接体验网页版](https://serennity007.github.io/xss-audit-desktop/)**：网页 0.2.0 已在 GitHub Pages 独立上线，2026-10-29 实际跑通样例与基线对比。无需账号或 API Key，源码在浏览器本地处理。支持目录导入、项目范围设置、HTML／Vue／Svelte 有限脚本审查、组合筛选、版本对比和五种报告。[网页说明](web/README.md#中文) · [网页更新](web/CHANGELOG.md) · [部署验证](docs/verification/web-0.2.0-public.json)。网页与桌面覆盖不同。
 
-源码新增：桌面与 CLI 已支持基线对比，区分新增、持续出现和本次未再观察到的线索，见[使用说明](docs/USAGE.zh-CN.md#扫描基线对比未发布源码功能)。此改动尚未包含在已发布的 v0.3.0 EXE 中。后续扩展及验收条件见[优化路线](docs/ROADMAP.md#中文)。
+桌面 **v0.4.0** 已包含基线对比，区分新增、持续出现和本次未再观察到的线索，见[使用说明](docs/USAGE.zh-CN.md#扫描基线对比)。后续扩展及验收条件见[优化路线](docs/ROADMAP.md#中文)。
 
 **在同一个工作台查看源码上下文、数据流证据与人工复核记录。**
 
@@ -23,7 +23,7 @@
 
 本地静态扫描无需 API Key。需要 AI 辅助时，再使用自己的接口、模型和密钥启用。
 
-`main` 的功能更新现已支持项目扫描配置、逐文件覆盖说明、跨快照复核记录保留及状态筛选，并补充部分 HTML / Python 数据流模型。[配置与行为变化](docs/SCAN-CONFIG.zh-CN.md)包含使用方法及复核记录兼容说明；下方 v0.3.0 下载仍是已发布的旧版二进制。
+v0.4.0 同时打包项目扫描配置、逐文件覆盖说明、跨快照复核记录保留及状态筛选，并补充部分 HTML / Python 数据流模型。[配置与行为变化](docs/SCAN-CONFIG.zh-CN.md)包含使用方法及复核记录兼容说明。
 
 源码另提供[仓库级审计鲁棒性研究平台](docs/ROBUSTNESS.zh-CN.md)：构建源码不变、README 上下文不同的实验对，记录受控多文件审计轨迹，并分别分析检出、定位和证据退化。可运行 `python -m xss_audit.research_cli demo --output D:\audit-research\demo --offline-demo` 查看合成演示；演示使用脚本响应，不代表真实模型效果。
 
@@ -31,7 +31,7 @@
 
 ## 下载即用
 
-下载 **[XSS-Audit-v0.3.0-windows-x64.zip](https://github.com/Serennity007/xss-audit-desktop/releases/download/v0.3.0/XSS-Audit-v0.3.0-windows-x64.zip)**，解压后选择入口：
+下载 **[XSS-Audit-v0.4.0-windows-x64.zip](https://github.com/Serennity007/xss-audit-desktop/releases/download/v0.4.0/XSS-Audit-v0.4.0-windows-x64.zip)**，解压后选择入口：
 
 | 程序 | 用途 |
 | --- | --- |
@@ -160,6 +160,6 @@ python -m unittest discover -s tests -v
 
 本项目独立衍生自 **[songjianyang/xss-audit](https://github.com/songjianyang/xss-audit)**，原项目是 MIT 许可的审计 Skill。本仓库新增桌面软件、CLI、扫描器、有限 AST 分析、可选 AI 传输与打包，保留[原始规则](SKILL.md)、[上游 README](docs/UPSTREAM-README.md)及署名；原作者未为本衍生项目背书。
 
-[MIT 许可](LICENSE) · [来源署名](NOTICE.md) · [解析器许可](THIRD-PARTY-NOTICES.txt) · [v0.3.0 发布说明](docs/RELEASE-v0.3.0.md)
+[MIT 许可](LICENSE) · [来源署名](NOTICE.md) · [解析器许可](THIRD-PARTY-NOTICES.txt) · [v0.4.0 发布说明](docs/RELEASE-v0.4.0.md)
 
 请审查自己拥有或获得授权的代码。

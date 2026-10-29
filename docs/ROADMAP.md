@@ -1,12 +1,12 @@
 # Functional roadmap
 
-This is a development sequence, not a claim that the listed capabilities exist. Published binaries remain v0.3.0. Scope each increment around a complete, verifiable user task.
+This is a development sequence, not a claim that the listed capabilities exist. Published Windows binaries are v0.4.0; the browser engine is independently versioned 0.2.0. Scope each increment around a complete, verifiable user task.
 
 ## Delivered source and browser increments
 
-Integrated upstream development commits f495a3a, 011f642 and 3eb4908: scan configuration, per-file coverage, review history/status filtering, HTML/Python analysis improvements and a paired repository-auditor robustness research harness. These remain source features, not new published Windows binaries or measured live-model research results.
+Integrated development commits f495a3a, 011f642 and 3eb4908: scan configuration, per-file coverage, review history/status filtering and HTML/Python analysis improvements are packaged in Windows v0.4.0. The paired repository-auditor robustness research harness remains a Python-source entrypoint, without measured live-model research results.
 
-Browser 0.2.0 is implemented in web/: folder/multifile import, bounded include/exclude scope and import inventory, local JS/TS AST review, limited HTML/Vue/Svelte inline scripts, combined triage filters, conservative baselines, and JSON/Markdown/HTML/CSV/SARIF exports. Browser and desktop coverage differ. WorkBuddy has a separately deployed 0.1.0 public preview; publishing the 0.2.0 repository package does not update that site. See web/README.md and web/WORKBUDDY.md.
+Browser 0.2.0 is live on [GitHub Pages](https://serennity007.github.io/xss-audit-desktop/): folder/multifile import, bounded include/exclude scope and import inventory, local JS/TS AST review, limited HTML/Vue/Svelte inline scripts, combined triage filters, conservative baselines, and JSON/Markdown/HTML/CSV/SARIF exports. Browser and desktop coverage differ. WorkBuddy remains a separately deployed 0.1.0 preview, with an optional handoff; it is not the primary deployment. See web/README.md.
 
 Baseline comparison is available in the desktop and CLI. Export a full JSON report, scan a comparable project snapshot, then compare. Reports preserve new/unchanged identities and locations no longer observed. The desktop has a new-signals view; CLI supports baseline-aware matching gates. Missing signals never automatically become fixed. Identity is based on path, rule and nearby code, not semantic equivalence. See the English and Chinese usage guides for limits.
 
@@ -14,7 +14,7 @@ Baseline comparison is available in the desktop and CLI. Export a full JSON repo
 
 | Order | User outcome | Required proof |
 | --- | --- | --- |
-| 1 | Experience a browser workbench without installation | Synthetic sample and user files use the same real analyzer; review and offline exports work anonymously; mobile and keyboard flows pass; source processing/storage is disclosed. |
+| 1 | Maintain the deployed browser workbench | Keep synthetic sample, user-file analysis, triage, offline exports, mobile/keyboard behavior and disclosed local storage working on every deployment. |
 | 2 | Extend the existing project scope controls | Existing TOML include/exclude configuration and budgets are integrated. Any further ignore-file support must have predictable precedence and report effective scope. |
 | 3 | Extend embedded framework review | Limited root-script extraction now retains original coordinates and isolated parse failures. Further framework support needs compiler-aware template semantics and independent cases; extraction alone does not establish it. |
 | 4 | Trace selected cross-file paths | Resolve a declared subset of imports and function calls with explicit budgets; distinguish unsupported/dynamic paths; validate positive and negative cases without claiming full repository analysis. |
@@ -35,9 +35,9 @@ Baseline comparison is available in the desktop and CLI. Export a full JSON repo
 
 ## 中文
 
-本文件是开发顺序，不代表所有功能已实现。公开二进制仍为 v0.3.0。
+本文件是开发顺序，不代表所有功能已实现。公开 Windows 二进制为 v0.4.0，网页独立版本为 0.2.0。
 
-本地源码已补齐桌面、CLI 和四种报告的基线对比，并合入远端的项目配置、覆盖说明、复核历史和仓库审计鲁棒性评测工具。基线按路径、规则、线索身份和源文件摘要比较，不证明语义等价，不把未再观察到的线索当成已修复。网页 0.2.0 已补齐目录导入、范围、有限组件脚本、组合筛选、基线和五种导出；WorkBuddy 已有 0.1.0 公开预览，新版仍需重新部署。科研工具未据此宣称真实模型性能或论文创新。
+v0.4.0 已打包桌面、CLI 和四种报告的基线对比、项目配置、覆盖说明及复核历史。基线按路径、规则、线索身份和源文件摘要比较，不证明语义等价，不把未再观察到的线索当成已修复。网页 0.2.0 已上线 GitHub Pages，包含目录导入、范围、有限组件脚本、组合筛选、基线和五种导出；旧 WorkBuddy 0.1.0 预览未改动。科研工具仍从 Python 源码运行，未据此宣称真实模型性能或论文创新。
 
 后续按完整用户流程推进：
 

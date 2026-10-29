@@ -8,7 +8,7 @@
 
 > 自动结果是待确认线索。“高 / 中 / 信息”表示人工复核优先级，不是已证实漏洞等级。有限 AST 分析不覆盖完整跨文件调用链，零匹配不代表安全。AI 结果同样需要人工复核。
 
-## v0.3 中英双语
+## 中英双语
 
 界面默认英语，可在右上角选择简体中文；语言选择会保存在本机。命令行使用 `--lang en` 或 `--lang zh-CN`；报告和 AI 请求跟随所选语言。源代码、路径、用户备注和已有 AI 文本保持原样。JSON/SARIF 保留既有状态字段，另提供本地化显示标签。
 
@@ -28,7 +28,7 @@
 
 ## 下载与运行
 
-从 [Releases](https://github.com/Serennity007/xss-audit-desktop/releases/latest) 下载 `XSS-Audit-v0.3.0-windows-x64.zip` 并解压：
+从 [Releases](https://github.com/Serennity007/xss-audit-desktop/releases/latest) 下载 `XSS-Audit-v0.4.0-windows-x64.zip` 并解压：
 
 - **XSS-Audit-Desktop.exe**：打开桌面界面，可切换简体中文；选择本地目录或导入 GitHub → 扫描 → 查看上下文和证据 → 保存复核标记 → 导出报告。
 - **xss-audit-cli.exe**：在 PowerShell / 终端运行，用于批处理和 CI。
@@ -58,7 +58,7 @@ CLI 可用 `--no-saved-review` 忽略本机复核记录，`--destination` 指定
 
 仅支持公开 `github.com` 仓库首页或 `owner/repository`；分支、标签或 commit 单独填写。使用 GitHub 官方 ZIP archive 接口，不使用账号令牌，不需要 Git，不获取 Git 历史、子模块内容或 LFS 实体文件。下载只允许 GitHub 官方主机的 HTTPS 重定向。压缩下载上限 60 MiB，解压总量 250 MiB / 15000 项 / 单文件 20 MiB，拒绝越界路径、链接、设备文件和大小写冲突。
 
-默认本地数据目录为 Windows `%LOCALAPPDATA%\XSSAudit`：`imports` 保存导入源码，`state` 保存复核标记及接口设置。缓存不会自动删除，可按界面显示路径自行管理。API Key 不保存。复核身份由项目、规则、路径及邻近代码摘要确定；更远处的语义改动可能不使标记失效，重新审计时应复核旧标记。不同机器不自动同步复核记录。
+默认本地数据目录为 Windows `%LOCALAPPDATA%\XSSAudit`：`imports` 保存导入源码，`state` 保存复核标记及接口设置。缓存不会自动删除，可按界面显示路径自行管理。API Key 不保存。复核身份包含项目、规则、路径、出现实例及完整源文件摘要；该文件任何内容变化后均要求重新复核，尚不跟踪其他文件的依赖变化。回到完全相同的旧快照可以恢复对应判断。不同机器不自动同步复核记录。
 
 ## AI 辅助审计
 
@@ -82,20 +82,20 @@ AI 上下文预算为约 **18 万字符**，优先选择 AST 高优先级文件�
 
 实现依据 [OpenAI 官方 Responses 文档](https://developers.openai.com/api/docs/guides/migrate-to-responses?api-mode=responses)。协议使用模拟 HTTP 服务验证；发布前未使用真实付费模型联调，审计质量未经基准评测。
 
-## 扫描基线对比（未发布源码功能）
+## 扫描基线对比
 
 先导出包含全部线索的 JSON 报告。桌面版完成新扫描后点击“对比基线”，选择旧报告；“仅看新增”只筛选视图，桌面导出仍包含全部当前线索。范围页和四种报告保留对比摘要及未再观察到的线索位置。
 
-源码 CLI 示例：
+打包 CLI 示例：
 
 ```powershell
-python -m xss_audit "D:\projects\web-app" --format json -o baseline.json
-python -m xss_audit "D:\projects\web-app" --baseline baseline.json --only-new --fail-on-match --lang zh-CN --format html -o new-signals.html
+.\xss-audit-cli.exe "D:\projects\web-app" --format json -o baseline.json
+.\xss-audit-cli.exe "D:\projects\web-app" --baseline baseline.json --only-new --fail-on-match --lang zh-CN --format html -o new-signals.html
 ```
 
 筛选后有新增线索时返回 1；扫描不完整仍返回 2。对比摘要统计完整扫描，随后才应用报告筛选。不接受已筛选、已取消、达到上限或 AST 不完整的 JSON 基线，基线文件上限为 64 MiB。
 
-身份按路径、规则、线索指纹和完整源文件摘要比较，保留重复出现次数；即使危险调用文本不变，文件其他内容变化也要求重新复核。旧报告缺少摘要，升级后可能全部显示为新增。“未再观察到”不代表已修复，也可能由扫描范围、未读取文件或引擎变化造成。报告记录配置范围差异，请自行核对项目、引擎和范围可比。对比不会更改人工复核状态。包含全部线索的对比报告可作为下一次基线；仅新增报告不可。本功能尚未包含在公开 v0.3.0 EXE 中。
+身份按路径、规则、线索指纹和完整源文件摘要比较，保留重复出现次数；即使危险调用文本不变，文件其他内容变化也要求重新复核。旧报告缺少摘要，升级后可能全部显示为新增。“未再观察到”不代表已修复，也可能由扫描范围、未读取文件或引擎变化造成。报告记录配置范围差异，请自行核对项目、引擎和范围可比。对比不会更改人工复核状态。包含全部线索的对比报告可作为下一次基线；仅新增报告不可。本功能已包含在 v0.4.0 桌面和 CLI 程序中。
 
 ## 规则与扫描范围
 
@@ -136,7 +136,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe scripts/build_release.py
 ```
 
-`release/v0.3.0/` 包含桌面 EXE、CLI EXE、ZIP 和 SHA-256 文件，旧版本产物保留。打包包含三种 Tree-sitter 组件及 MIT 许可，见 [第三方声明](../THIRD-PARTY-NOTICES.txt)。使用 [PyInstaller](https://pyinstaller.org/en/stable/usage.html)；工具版本固定，间接构建依赖未全锁定，二进制不保证逐字节可复现。
+`release/v0.4.0/` 包含桌面 EXE、CLI EXE、ZIP 和 SHA-256 文件，旧版本产物保留。打包包含三种 Tree-sitter 组件及 MIT 许可，见 [第三方声明](../THIRD-PARTY-NOTICES.txt)。使用 [PyInstaller](https://pyinstaller.org/en/stable/usage.html)；工具版本固定，间接构建依赖未全锁定，二进制不保证逐字节可复现。
 
 `docs/workflows/` 附带两个可选 GitHub Actions 模板：`Verify` 测试与验证安装，`Build Windows Release` 构建并发布标签版本。首次发布使用本机构建与测试的产物。当前凭据缺少 GitHub `workflow` 权限，模板尚未启用；之后可用有该权限的凭据将模板复制至 `.github/workflows/` 再提交。不同构建环境的产物可能不同，以 Release 校验文件为准。
 

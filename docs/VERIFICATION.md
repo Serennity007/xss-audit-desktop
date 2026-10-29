@@ -1,4 +1,10 @@
-# Local verification · v0.3.0
+# Verification records
+
+Current release: [Windows v0.4.0 verification](verification/v0.4.0-local.json) — 148 regression tests (145 passed, 3 skipped) and 17 frozen-CLI checks; desktop launch and synthetic scan observed. [Public web 0.2.0 deployment](verification/web-0.2.0-public.json) records the independent GitHub Pages build and basic live-browser flow. [Web local verification](verification/web-0.2.0-local.json) covers the broader browser acceptance checks.
+
+当前版本验证：Windows v0.4.0 的 148 项回归检查中 145 通过、3 项因本机符号链接权限跳过，打包 CLI 的 17 项检查通过；桌面已实际启动并扫描合成样例。公开网页独立部署至 GitHub Pages，基本分析与基线对比已实测。以下保留 v0.3.0 原始记录，便于区分版本与验证范围。
+
+# Historical local verification · v0.3.0
 
 This is a local implementation check of the existing application and portable CLI. The [machine-readable receipt](verification/v0.3.0-local.json) records the observation time, source commit, runtime/test Git trees, environment and commands. The [test log](verification/v0.3.0-tests.txt) retains individual outcomes; machine-local project and temporary-directory prefixes are replaced with placeholders.
 

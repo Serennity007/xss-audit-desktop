@@ -71,11 +71,21 @@ Comparison uses the entire file digest and each signal ID: even a distant commen
 
 CSV has a consistent `record_type` column: `signal` rows contain findings; `metadata` rows carry scope, coverage and comparison. It is UTF-8 with BOM. SARIF uses warning/note presentation levels, explicit unverified-exploitability properties, code-flow locations, review states and baseline states; importing into a third-party platform is not independently certified.
 
-## Public preview and updating
+## Public website and updating
 
-[WorkBuddy public preview](https://xss-audit-studio.app.workbuddy.host/?sharecode=JHJQZE62LQ) was opened on 2026-10-29 and its basic sample analysis returned 2 files / 6 signals / 3 high-priority signals. That deployment was created from **0.1.0**. This repository's **0.2.0** build must be separately uploaded and republished in WorkBuddy; a GitHub release does not update it. The original preview's full acceptance table is user-supplied, not a fresh independent verification of every row.
+[Open the public workbench](https://serennity007.github.io/xss-audit-desktop/) — **web 0.2.0**, independently hosted on GitHub Pages. On 2026-10-29 the public site completed the synthetic example (2 files / 6 signals / 3 high-priority signals), followed by an identical-baseline comparison (0 new / 6 unchanged / 0 not observed). See the [public deployment receipt](../docs/verification/web-0.2.0-public.json). This address does not depend on WorkBuddy.
 
-See [WorkBuddy handoff](WORKBUDDY.md), [release changes](CHANGELOG.md) and [0.2.0 verification](../docs/verification/web-0.2.0-local.json). HTTPS deployment needs no server or runtime network connection. Copy the whole built directory atomically; the build versions asset URLs and bundles the parsers only into the Worker.
+To republish this repository with an already authenticated GitHub CLI and repository administration access, run from `web/`:
+
+```powershell
+npm run build
+node scripts/deploy-pages.mjs
+node scripts/deploy-pages.mjs --publish
+```
+
+The first deployment command only previews the files and hashes. `--publish` pushes the seven built static files, `.nojekyll` and `deployment.json` to `gh-pages`, without switching or staging the source checkout or force-pushing. It configures branch-based Pages only when no Pages configuration exists; an existing different source is preserved and reported. Wait for GitHub's Pages build to finish before checking the public address. Source changes require a new build and deployment; publishing a release alone does not update the website.
+
+See [release changes](CHANGELOG.md) and [local 0.2.0 verification](../docs/verification/web-0.2.0-local.json). HTTPS deployment needs no analysis server or runtime network connection. The build versions asset URLs and bundles the parsers only into the Worker. The earlier [WorkBuddy preview](https://xss-audit-studio.app.workbuddy.host/?sharecode=JHJQZE62LQ) remains a separate **0.1.0** deployment; it was not updated in this release. [WorkBuddy handoff](WORKBUDDY.md) is optional if a submission specifically requires that host or a sharecode. The application link and creation-conversation link are distinct.
 
 ## 中文
 
@@ -87,4 +97,6 @@ See [WorkBuddy handoff](WORKBUDDY.md), [release changes](CHANGELOG.md) and [0.2.
 
 按上方命令构建，将 web/dist 全部文件部署到 HTTPS 静态网站。目录导入会替换当前页面项目，文件导入会追加；依赖和构建目录默认跳过，不读取被跳过文件的内容。改变范围后需重新导入才能恢复未读取的文件。源码、基线和导入清单仅保留在页面内存；本机存储只保存最多 500 条复核判断、备注、时间和摘要。没有 ZIP／GitHub 在线导入、Python、完整跨文件分析、AI 审查或动态验证，不会运行用户代码。
 
-现有 WorkBuddy 体验链接已实际打开并跑通基础样例，来自 0.1.0。GitHub 0.2.0 发布不会自动更新该站点，需要重新上传部署包并发布。参赛应用链接与创作对话分享链接仍需分别获取，不能用 GitHub Release 或本机地址代替。
+当前主站为 [GitHub Pages 网页版](https://serennity007.github.io/xss-audit-desktop/)，已部署 0.2.0 并实际跑通样例与基线对比。按上方命令预览部署清单，再使用 `--publish` 更新 `gh-pages`；不会切换源码分支或强制推送。GitHub Pages 构建完成后才会更新线上内容。
+
+旧 WorkBuddy 站点独立保留在 0.1.0，本次未操作。如活动明确要求 WorkBuddy 发布和 sharecode，再按可选交接文档操作；普通公开使用直接打开 GitHub Pages 即可。参赛应用链接与创作对话分享链接需分别获取。

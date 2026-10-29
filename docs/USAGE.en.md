@@ -10,7 +10,7 @@ Derived from [songjianyang/xss-audit](https://github.com/songjianyang/xss-audit)
 
 ## Download
 
-Download `XSS-Audit-v0.3.0-windows-x64.zip` from [Releases](https://github.com/Serennity007/xss-audit-desktop/releases/latest), then extract it:
+Download `XSS-Audit-v0.4.0-windows-x64.zip` from [Releases](https://github.com/Serennity007/xss-audit-desktop/releases/latest), then extract it:
 
 - **XSS-Audit-Desktop.exe:** select a local folder or import a public GitHub repository, scan, inspect context/evidence, save review decisions and export a report.
 - **xss-audit-cli.exe:** terminal, batch and CI entry point.
@@ -58,22 +58,22 @@ Import accepts public `github.com` repository homepages or `owner/repository`; p
 
 Limits: 60 MiB compressed, 250 MiB extracted, 15,000 archive entries and 20 MiB per archive member. Extraction rejects out-of-scope paths, links, device names and case collisions. Project files are not executed and project dependencies are not installed.
 
-Windows data lives under `%LOCALAPPDATA%\XSSAudit`: `imports` holds downloaded source and `state` holds review records and non-secret preferences. Imports are not automatically deleted. The API key is never persisted. Review identities use the project, rule, path and nearby-code digest; distant semantic changes may not invalidate a saved decision, so old decisions still need review. Records are not synchronized across machines.
+Windows data lives under `%LOCALAPPDATA%\XSSAudit`: `imports` holds downloaded source and `state` holds review records and non-secret preferences. Imports are not automatically deleted. The API key is never persisted. Review identities include the project, rule, path, occurrence and full source-file digest. Changes anywhere in that file require fresh review; changes only in other files are not tracked. Returning to the identical old snapshot can restore its decision. Records are not synchronized across machines.
 
-## Compare scans (unreleased source feature)
+## Compare scans
 
 Export a complete JSON report as the baseline. On the desktop, complete a new scan and select **Compare baseline**; **New signals only** filters the view, while exports still contain all current signals. Comparison details and signals no longer observed appear in the scope tab and exported reports.
 
-From the source CLI:
+From the packaged CLI:
 
 ```powershell
-python -m xss_audit "D:\projects\web-app" --format json -o baseline.json
-python -m xss_audit "D:\projects\web-app" --baseline baseline.json --only-new --fail-on-match --format html -o new-signals.html
+.\xss-audit-cli.exe "D:\projects\web-app" --format json -o baseline.json
+.\xss-audit-cli.exe "D:\projects\web-app" --baseline baseline.json --only-new --fail-on-match --format html -o new-signals.html
 ```
 
 Exit 1 means new signals remain after priority/review filters; incomplete scans still return 2. Comparison counts describe the full scan before report filters. Filtered, cancelled, truncated and incomplete-AST JSON reports cannot be used as baselines. Baseline files are limited to 64 MiB.
 
-Identities use path, rule, finding fingerprint and full source-file digest, including multiplicity. File changes require fresh review even if the sink text stays identical. Legacy reports without digests may show all signals as new after upgrading. No longer observed does not mean fixed: scope changes, skipped/unread files and engine changes can also remove a match. Choose the same project and comparable engine/scope; scope differences are recorded. Review decisions are not changed. An unfiltered compared report can become the next baseline; a new-only report cannot. This feature is not in the published v0.3.0 EXEs.
+Identities use path, rule, finding fingerprint and full source-file digest, including multiplicity. File changes require fresh review even if the sink text stays identical. Legacy reports without digests may show all signals as new after upgrading. No longer observed does not mean fixed: scope changes, skipped/unread files and engine changes can also remove a match. Choose the same project and comparable engine/scope; scope differences are recorded. Review decisions are not changed. An unfiltered compared report can become the next baseline; a new-only report cannot. Included in the v0.4.0 desktop and CLI executables.
 
 ## Optional AI review
 
@@ -129,7 +129,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe scripts/build_release.py
 ```
 
-`release/v0.3.0/` contains the two EXEs, portable ZIP and SHA-256 checksums; earlier version directories remain available. Parser notices are included in [THIRD-PARTY-NOTICES.txt](../THIRD-PARTY-NOTICES.txt). Packaging uses [PyInstaller](https://pyinstaller.org/en/stable/usage.html); indirect build dependencies are not fully locked, so byte-for-byte reproducibility is not claimed.
+`release/v0.4.0/` contains the two EXEs, portable ZIP and SHA-256 checksums; earlier version directories remain available. Parser notices are included in [THIRD-PARTY-NOTICES.txt](../THIRD-PARTY-NOTICES.txt). Packaging uses [PyInstaller](https://pyinstaller.org/en/stable/usage.html); indirect build dependencies are not fully locked, so byte-for-byte reproducibility is not claimed.
 
 Optional Actions templates live in `docs/workflows/`. They are not enabled because the current GitHub credential lacks `workflow` scope. Local builds and validation are used for this release.
 

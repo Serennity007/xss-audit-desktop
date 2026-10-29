@@ -1,6 +1,6 @@
 # Repeatable scans and review history
 
-These changes are in the development source on `main`. Published v0.3.0 executables do not include them.
+Available in the v0.4.0 Windows desktop and CLI release, as well as the Python source.
 
 ## Project configuration
 

@@ -13,10 +13,10 @@
 
 # XSS Audit Desktop
 
-**[Try the browser workbench](https://xss-audit-studio.app.workbuddy.host/?sharecode=JHJQZE62LQ)** — public WorkBuddy preview, opened and sample-tested on 2026-10-29 (deployed from 0.1.0). The [0.2.0 browser release](https://github.com/Serennity007/xss-audit-desktop/releases/tag/web-v0.2.0) adds folder imports, explicit project scope, limited HTML/Vue/Svelte script review, combined triage filters, conservative version comparison and five export formats. These new features need separate WorkBuddy redeployment; GitHub publication does not update the preview. [Web documentation](web/README.md) · [Deployment handoff](web/WORKBUDDY.md) · [Browser changes](web/CHANGELOG.md). Browser and desktop coverage differ.
+**[Try the browser workbench](https://serennity007.github.io/xss-audit-desktop/)** — web 0.2.0, independently hosted on GitHub Pages and sample-tested on 2026-10-29. Review source locally in your browser without an account or API key: folder imports, explicit project scope, limited HTML/Vue/Svelte script review, combined triage filters, conservative baselines and five export formats. [Web documentation](web/README.md) · [Browser changes](web/CHANGELOG.md) · [Deployment verification](docs/verification/web-0.2.0-public.json). Browser and desktop coverage differ.
 
-Source-only update: desktop and CLI baseline comparison now distinguishes new, unchanged and no-longer-observed review signals. See the [usage guide](docs/USAGE.en.md#compare-scans-unreleased-source-feature). This is not included in the published v0.3.0 binaries. Planned extensions and acceptance conditions are in the [roadmap](docs/ROADMAP.md).
-The development version on `main` adds project scan settings, per-file coverage, retained review history, status filtering and additional HTML/Python flow models. See [scan configuration and behavior changes](docs/SCAN-CONFIG.en.md). The v0.3.0 downloads below remain the previously published binaries.
+Desktop **v0.4.0** includes baseline comparison in the desktop and CLI, distinguishing new, unchanged and no-longer-observed review signals. See the [usage guide](docs/USAGE.en.md#compare-scans). Planned extensions and acceptance conditions are in the [roadmap](docs/ROADMAP.md).
+The same release packages project scan settings, per-file coverage, retained review history, status filtering and additional HTML/Python flow models. See [scan configuration and behavior changes](docs/SCAN-CONFIG.en.md).
 
 The source also includes a [repository-auditor robustness research platform](docs/ROBUSTNESS.en.md): unchanged-source context pairs, bounded multi-file audit transcripts and separate detection, localization and evidence regression proxies. Run `python -m xss_audit.research_cli demo --output D:\audit-research\demo --offline-demo` for a scripted synthetic demonstration; it is not measured model performance.
 
@@ -30,7 +30,7 @@ Local static scanning works without an API key. You can opt into AI review using
 
 ## Download and start
 
-Download **[XSS-Audit-v0.3.0-windows-x64.zip](https://github.com/Serennity007/xss-audit-desktop/releases/download/v0.3.0/XSS-Audit-v0.3.0-windows-x64.zip)**, extract it, and choose an entrypoint:
+Download **[XSS-Audit-v0.4.0-windows-x64.zip](https://github.com/Serennity007/xss-audit-desktop/releases/download/v0.4.0/XSS-Audit-v0.4.0-windows-x64.zip)**, extract it, and choose an entrypoint:
 
 | Program | Use it for |
 | --- | --- |
@@ -159,6 +159,6 @@ For a vulnerability in this application, use [private vulnerability reporting](h
 
 Independent derivative of **[songjianyang/xss-audit](https://github.com/songjianyang/xss-audit)**, an MIT-licensed audit Skill. This repository adds the desktop app, CLI, scanner, limited AST analysis, optional AI transport and packaging. It retains the [original playbook](SKILL.md), [upstream README](docs/UPSTREAM-README.md) and attribution. The upstream author has not endorsed this derivative.
 
-[MIT License](LICENSE) · [Attribution](NOTICE.md) · [Parser notices](THIRD-PARTY-NOTICES.txt) · [v0.3.0 release notes](docs/RELEASE-v0.3.0.md)
+[MIT License](LICENSE) · [Attribution](NOTICE.md) · [Parser notices](THIRD-PARTY-NOTICES.txt) · [v0.4.0 release notes](docs/RELEASE-v0.4.0.md)
 
 Review code you own or are authorized to assess.
