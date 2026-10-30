@@ -13,6 +13,8 @@
 
 # XSS Audit Desktop
 
+[按用途浏览全部项目](https://github.com/Serennity007/repo-catalog/blob/main/README.zh-CN.md) · [2026-10-30 源码复验](docs/verification/2026-10-30-source.json)
+
 **[直接体验网页版](https://serennity007.github.io/xss-audit-desktop/)**：工作台 0.3.0 独立部署至 GitHub Pages，新增 ZIP 导入、含完整源码的项目快照、跨文件字面搜索和筛选结果批量复核。无需账号或 API Key，源码在浏览器本地处理；保留 0.2.0 AST 引擎与基线兼容性。[网页说明](web/README.md#中文) · [网页更新](web/CHANGELOG.md) · [验证与限制](docs/verification/web-0.3.0-local.json)。网页与桌面覆盖不同。
 
 桌面 **v0.4.0** 已包含基线对比，区分新增、持续出现和本次未再观察到的线索，见[使用说明](docs/USAGE.zh-CN.md#扫描基线对比)。后续扩展及验收条件见[优化路线](docs/ROADMAP.md#中文)。
@@ -27,7 +29,7 @@ v0.4.0 同时打包项目扫描配置、逐文件覆盖说明、跨快照复核�
 
 源码另提供[仓库级审计鲁棒性研究平台](docs/ROBUSTNESS.zh-CN.md)：构建源码不变、README 上下文不同的实验对，记录受控多文件审计轨迹，并分别分析检出、定位和证据退化。可运行 `python -m xss_audit.research_cli demo --output D:\audit-research\demo --offline-demo` 查看合成演示；演示使用脚本响应，不代表真实模型效果。
 
-**[下载 Windows 版](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [试用示例](#先用附带示例体验) · [文档导航](docs/README.md) · [验证记录](docs/VERIFICATION.md#中文) · [参与贡献](docs/CONTRIBUTING.zh-CN.md)
+**[下载 Windows 版](https://github.com/Serennity007/xss-audit-desktop/releases/latest)** · [试用示例](#先用附带示例体验) · [文档导航](docs/README.md) · [验证记录](docs/VERIFICATION.md) · [参与贡献](docs/CONTRIBUTING.zh-CN.md)
 
 ## 下载即用
 
@@ -137,7 +139,7 @@ New-Item -ItemType Directory -Force .\reports | Out-Null
 
 ## 开发与贡献
 
-由 [Serennity007](https://github.com/Serennity007) 维护。[本地验证记录](docs/VERIFICATION.md#中文)列明 **43 项测试通过、1 项跳过**，另有 **8 组便携 CLI 导出检查**通过，并说明跳过原因，区分本地验证、托管 CI 与检测质量评测。
+由 [Serennity007](https://github.com/Serennity007) 维护。[v0.4.0 验证记录](docs/VERIFICATION.md)列明 **148 项回归测试：145 项通过、3 项跳过**，另有 **17 项打包 CLI 检查**通过。[2026-10-30 源码复验](docs/verification/2026-10-30-source.json)在新的 Python 隔离环境重现了回归结果，3 项跳过均因 Windows 符号链接权限；这次源码复验未重测打包 EXE 与网页。
 
 ```powershell
 git clone https://github.com/Serennity007/xss-audit-desktop.git

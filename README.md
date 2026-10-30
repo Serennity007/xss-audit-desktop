@@ -13,6 +13,8 @@
 
 # XSS Audit Desktop
 
+[All projects by task](https://github.com/Serennity007/repo-catalog) · [Source recheck · 2026-10-30](docs/verification/2026-10-30-source.json)
+
 **[Try the browser workbench](https://serennity007.github.io/xss-audit-desktop/)** — web workbench 0.3.0, independently hosted on GitHub Pages. Review source locally without an account or API key: ZIP/folder imports, downloadable project snapshots, source search, filtered batch review, limited AST evidence, conservative baselines and five export formats. The unchanged AST engine remains 0.2.0. [Web documentation](web/README.md) · [Browser changes](web/CHANGELOG.md) · [Verification and limits](docs/verification/web-0.3.0-local.json). Browser and desktop coverage differ.
 
 Desktop **v0.4.0** includes baseline comparison in the desktop and CLI, distinguishing new, unchanged and no-longer-observed review signals. See the [usage guide](docs/USAGE.en.md#compare-scans). Planned extensions and acceptance conditions are in the [roadmap](docs/ROADMAP.md).
@@ -136,7 +138,7 @@ English is the default. Use the desktop selector or CLI `--lang en` / `--lang zh
 
 ## Develop and contribute
 
-Maintained by [Serennity007](https://github.com/Serennity007). The [local verification record](docs/VERIFICATION.md) reports **43 tests passed, 1 skipped**, plus **8 portable-CLI export checks**. It identifies the skipped test and distinguishes local qualification from hosted CI and detection-quality benchmarking.
+Maintained by [Serennity007](https://github.com/Serennity007). The [v0.4.0 verification record](docs/VERIFICATION.md) reports **148 regression tests: 145 passed, 3 skipped**, plus **17 frozen-CLI checks**. The [2026-10-30 source recheck](docs/verification/2026-10-30-source.json) reproduced the regression result in a fresh Python environment; the three skips require Windows symlink permission. Packaged executables and the web app were not retested in that source recheck.
 
 ```powershell
 git clone https://github.com/Serennity007/xss-audit-desktop.git

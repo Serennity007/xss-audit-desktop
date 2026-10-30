@@ -1,0 +1,49 @@
+{
+  "checked_on": "2026-10-30",
+  "timezone": "Asia/Shanghai",
+  "scope": "Source regression suite and freshly installed wheel smoke check; documentation maintenance only.",
+  "source_commit": "b1a5e97d953aeccda23a71e8237909f9a176e1a9",
+  "runtime_tree": "fb37d3df4aeb17968c3ee9e9c721484008562f27",
+  "tests_tree": "61f6381a767226668b8e7ad09fac46c7da10cebe",
+  "python": "3.11.9",
+  "dependencies": {
+    "tree-sitter": "0.25.2",
+    "tree-sitter-javascript": "0.25.0",
+    "tree-sitter-typescript": "0.23.2"
+  },
+  "regression": {
+    "ran": 148,
+    "passed": 145,
+    "skipped": 3,
+    "failures": 0,
+    "errors": 0,
+    "command": "python -m unittest discover -s tests -v",
+    "skipped_tests": [
+      [
+        "test_symlink_is_not_followed (test_audit.AuditTests.test_symlink_is_not_followed)",
+        "'Windows symlink permission not available'"
+      ],
+      [
+        "test_links_are_not_followed_even_if_replaced_after_inventory (test_repository_agent.RepositoryAgentTests.test_links_are_not_followed_even_if_replaced_after_inventory)",
+        "'Windows symlink permission not available'"
+      ],
+      [
+        "test_links_are_never_followed_and_linked_output_is_rejected (test_robustness.RobustnessTests.test_links_are_never_followed_and_linked_output_is_rejected)",
+        "'Symlink creation permission unavailable'"
+      ]
+    ]
+  },
+  "installed_package_smoke": {
+    "isolated_mode": true,
+    "files_scanned": 2,
+    "review_signals": 11,
+    "incomplete": false,
+    "fixture": "examples/demo-project"
+  },
+  "not_retested": [
+    "packaged Windows executables",
+    "browser application",
+    "paid model integration",
+    "detection accuracy"
+  ]
+}

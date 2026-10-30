@@ -1,3 +1,5 @@
+Source recheck on **2026-10-30 (Asia/Shanghai)**: a fresh Python 3.11.9 environment reproduced **145 passed / 3 skipped out of 148 tests**. Installed-wheel demo scan: 2 files, 11 review signals, no scan incompleteness reported for this synthetic fixture. [Receipt and scope](verification/2026-10-30-source.json). This recheck did not rebuild or retest the Windows EXEs or browser app.
+
 # Verification records
 
 Current browser workbench: [0.3.0 verification](verification/web-0.3.0-local.json) — source checks and built-bundle DOM/Worker integration; native-browser layout/permissions/file pickers were not retested in this run. The earlier public-browser record below remains historical.
